@@ -1,0 +1,89 @@
+LOCUS       Exported                 480 bp ds-DNA     linear   SYN 25-AUG-2016
+DEFINITION  synthetic linear DNA
+ACCESSION   .
+VERSION     .
+KEYWORDS    apa_symmetic_prx_UTR3
+SOURCE      synthetic DNA construct
+  ORGANISM  synthetic DNA construct
+REFERENCE   1  (bases 1 to 480)
+  AUTHORS   Seelig
+  TITLE     Direct Submission
+  JOURNAL   Exported Thursday, Aug 25, 2016 from SnapGene 3.2.1
+            http://www.snapgene.com
+FEATURES             Location/Qualifiers
+     source          1..480
+                     /organism="synthetic DNA construct"
+                     /mol_type="other DNA"
+     misc_feature    1..480
+                     /note="cut_bgh_amplicon"
+     misc_feature    1..295
+                     /note="cut_B_amplicon"
+     misc_feature    1..210
+                     /note="cut_A_amplicon"
+     misc_feature    1..23
+                     /note="Loverhang"
+     misc_feature    22..23
+                     /label=AGGGCC
+                     /note="AGGGCC"
+                     /note="Geneious type: Editing History Replacement"
+     misc_feature    24..53
+                     /note="PE1_partial"
+                     /note="Built-in Illumina PE1 sequence directly upstream of 
+                     barcode"
+     gap             54..73
+                     /estimated_length="20"
+     misc_feature    54..73
+                     /note="N20_barcode"
+     gap             89..113
+                     /estimated_length="25"
+     misc_feature    89..113
+                     /note="N25_up_A"
+     misc_feature    114..119
+                     /note="pas_A_90010108"
+     gap             120..159
+                     /estimated_length="40"
+     misc_feature    120..159
+                     /note="N40_down_A"
+     misc_feature    135..139
+                     /note="cut_A"
+     misc_feature    160..173
+                     /note="Annealed"
+     gap             174..198
+                     /estimated_length="25"
+     misc_feature    174..198
+                     /note="N25_up_B"
+     misc_feature    199..204
+                     /note="pas_B_90010108"
+     gap             205..244
+                     /estimated_length="40"
+     misc_feature    205..244
+                     /note="N40_down_B"
+     misc_feature    220..224
+                     /note="cut_B"
+     misc_feature    260..284
+                     /note="Roverhang"
+     misc_feature    260..274
+                     /label=AGGGCC
+                     /note="AGGGCC"
+                     /note="Geneious type: Editing History Replacement"
+     misc_feature    279..480
+                     /label=BGH pA
+                     /note="BGH pA"
+     misc_feature    369..374
+                     /note="pas_bgh_AATAAA"
+     misc_feature    369..374
+                     /note="PAS"
+     misc_feature    375..393
+                     /note="pA Cleave Site"
+     misc_feature    390..394
+                     /note="cut_bgh"
+ORIGIN
+        1 tgatagtaag gcccattacc tgcctctttc cctacacgac gctcttccga tctnnnnnnn
+       61 nnnnnnnnnn nnncattact cgcatccann nnnnnnnnnn nnnnnnnnnn nnnaaaaaan
+      121 nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn nnnnnnnnnc agccaattaa gccnnnnnnn
+      181 nnnnnnnnnn nnnnnnnnaa aaaannnnnn nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn
+      241 nnnnctacga actcccagcg cagaacacag cggttcgact gtgccttcta gttgccagcc
+      301 atctgttgtt tgcccctccc ccgtgccttc cttgaccctg gaaggtgcca ctcccactgt
+      361 cctttcctaa taaaatgagg aaattgcatc gcattgtctg agtaggtgtc attctattct
+      421 ggggggtggg gtggggcagg acagcaaggg ggaggattgg gaagacaata gcaggcatgc
+//

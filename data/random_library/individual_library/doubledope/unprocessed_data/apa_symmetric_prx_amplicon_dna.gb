@@ -1,0 +1,64 @@
+LOCUS       Exported                 309 bp ds-DNA     linear   SYN 23-AUG-2016
+DEFINITION  synthetic linear DNA
+ACCESSION   .
+VERSION     .
+KEYWORDS    apa_sym-prx_amplicon_dna
+SOURCE      synthetic DNA construct
+  ORGANISM  synthetic DNA construct
+REFERENCE   1  (bases 1 to 309)
+  AUTHORS   Seelig
+  TITLE     Direct Submission
+  JOURNAL   Exported Tuesday, Aug 23, 2016 from SnapGene 3.2.1
+            http://www.snapgene.com
+FEATURES             Location/Qualifiers
+     source          1..309
+                     /organism="synthetic DNA construct"
+                     /mol_type="other DNA"
+     misc_feature    29..58
+                     /note="PE1_partial"
+                     /note="Built-in Illumina PE1 sequence directly upstream of 
+                     barcode"
+     misc_feature    complement(50..249)
+                     /note="read_2"
+     misc_feature    59..258
+                     /note="read_1"
+     misc_feature    59..108
+                     /note="Feature 10"
+     gap             59..78
+                     /estimated_length="20"
+     misc_feature    59..78
+                     /note="Barcode"
+     gap             94..118
+                     /estimated_length="25"
+     misc_feature    109..158
+                     /note="Feature 11"
+     misc_feature    119..124
+                     /note="90010108"
+     gap             125..164
+                     /estimated_length="40"
+     misc_feature    159..208
+                     /note="Feature 12"
+     misc_feature    165..178
+                     /note="Annealed"
+     gap             179..203
+                     /estimated_length="25"
+     misc_feature    204..209
+                     /note="90010108"
+     misc_feature    209..258
+                     /note="Feature 13"
+     gap             210..249
+                     /estimated_length="40"
+     misc_feature    265..279
+                     /label=AGGGCC
+                     /note="AGGGCC"
+                     /note="Geneious type: Editing History Replacement"
+     misc_feature    265..279
+                     /note="Roverhang"
+ORIGIN
+        1 aatgatacgg cgaccaccga gatctacact ctttccctac acgacgctct tccgatctnn
+       61 nnnnnnnnnn nnnnnnnnca ttactcgcat ccannnnnnn nnnnnnnnnn nnnnnnnnaa
+      121 aaaannnnnn nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn nnnncagcca attaagccnn
+      181 nnnnnnnnnn nnnnnnnnnn nnnaaaaaan nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn
+      241 nnnnnnnnnc tacgaactcc cagcgcagaa cacagcggta tcacgatctc gtatgccgtc
+      301 ttctgcttg
+//

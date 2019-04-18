@@ -1,0 +1,73 @@
+LOCUS       Exported                 632 bp ds-DNA     linear   UNA 12-JUN-2016
+DEFINITION  natural linear DNA
+ACCESSION   .
+VERSION     .
+KEYWORDS    apa_fr_distal_amplicon
+SOURCE      natural DNA sequence
+  ORGANISM  unspecified
+REFERENCE   1  (bases 1 to 632)
+  AUTHORS   Seelig
+  TITLE     Direct Submission
+  JOURNAL   Exported Sunday, Jun 12, 2016 from SnapGene 3.1.4
+            http://www.snapgene.com
+FEATURES             Location/Qualifiers
+     source          1..632
+                     /organism="unspecified"
+                     /mol_type="genomic DNA"
+     misc_feature    1..29
+                     /note="P5"
+     misc_feature    30..62
+                     /note="PE1"
+     CDS             63..141
+                     /codon_start=2
+                     /label=citrine - no SDs
+                     /note="Citrine"
+                     /note="Geneious type: CDS"
+                     /translation="????VLLEFVTAAGITLGMDELYKD"
+     gap             63..74
+                     /estimated_length="12"
+     misc_feature    63..74
+                     /note="c12"
+                     /note="added during amplification to balance base calls 
+                     during cluster identification."
+     misc_feature    177..196
+                     /note="n20_a"
+                     /note="UTR_36-55"
+     misc_feature    192..201
+                     /note="n10_c"
+                     /note="UTR_51-60"
+     misc_feature    197..216
+                     /note="n20_b"
+                     /note="UTR_56-75"
+     misc_feature    223..228
+                     /note="pPAS"
+     misc_feature    239..242
+                     /note="pEND"
+     misc_feature    243..262
+                     /note="AAAAAAAAAAAAAAAAAAAA"
+     misc_feature    250..269
+                     /note="G"
+     misc_feature    525..530
+                     /note="dPAS"
+     misc_feature    540..543
+                     /note="dEnd"
+     misc_feature    597..602
+                     /note="r_index"
+     misc_feature    597..602
+                     /note="UMI"
+                     /note="Sequenced as index read 1."
+     misc_feature    603..632
+                     /note="P7"
+ORIGIN
+        1 aatgatacgg cgaccaccga gatctacaca cactctttcc ctacacgacg ctcttccgat
+       61 ctnnnnnnnn nnnnggtcct gctggagttc gtgaccgccg ccgggatcac tctcggcatg
+      121 gacgagctgt acaaggactg atagtaaggc ccattacctg cggccgcaat tctgcttgtt
+      181 aagaacaagt ttggctctgg taactgacct tcaaagctaa aatataaaac tatttgggaa
+      241 gtatgaaacg atgtctcgtg atctggtgta cccttatccc tgtgacgttt ggcctctgac
+      301 aatactggta taattgtaaa taatgtcaaa ctccgttttc tagcaagtat taagggagct
+      361 gtgtctgaaa tggcactgtc ttgtcagtca tttgcggccg cctgtttacc tttttcttct
+      421 gcccagagtg tatttgtgaa gagtctctta tattatgttt tgtggaaatc agcacacaac
+      481 cacaatgaca tttaagcaca ggatcattat tagtctatgt ttttaataaa catatcaatt
+      541 aagaaaaaaa aaaaaaaaaa aaagatcgga agagcacacg tctgaactcc agtcacnnnn
+      601 nnatcacgat ctcgtatgcc gtcttctgct tg
+//
