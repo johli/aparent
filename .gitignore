@@ -5,6 +5,12 @@ __pycache__/
 
 *.h5
 
+*.pickle
+*.csv
+*.mat
+*.npy
+*.npz
+
 .ipynb_checkpoints/
 model_checkpoints/
 
