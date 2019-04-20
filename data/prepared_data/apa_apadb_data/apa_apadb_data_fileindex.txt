@@ -1,1 +1,1 @@
-prepared_data/apa_apadb_data/apa_apadb_data_apadb_df.csv	apadb_df	csv
+apa_apadb_data_apadb_df.csv	apadb_df	csv
