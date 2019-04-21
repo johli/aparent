@@ -14,6 +14,10 @@ __pycache__/
 .ipynb_checkpoints/
 model_checkpoints/
 
+analysis/max_isoform_logos/
+analysis/max_cut_logos/
+analysis/max_cut_dse_logos/
+
 old/
 
 apa_array/unprocessed_data/
