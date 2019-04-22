@@ -1,11 +1,17 @@
 README.md
+setup.py
 aparent/__init__.py
 aparent.egg-info/PKG-INFO
 aparent.egg-info/SOURCES.txt
 aparent.egg-info/dependency_links.txt
 aparent.egg-info/top_level.txt
 aparent/data/__init__.py
+aparent/data/aparent_data_array.py
+aparent/data/aparent_data_array_legacy.py
+aparent/data/aparent_data_native.py
+aparent/data/aparent_data_native_pairs.py
 aparent/data/aparent_data_plasmid.py
+aparent/data/aparent_data_plasmid_legacy.py
 aparent/losses/__init__.py
 aparent/losses/aparent_losses.py
 aparent/model/__init__.py
