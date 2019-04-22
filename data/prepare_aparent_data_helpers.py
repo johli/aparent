@@ -391,12 +391,12 @@ def summarize_dataframe(df, min_barcodes=1, min_pooled_count=1, min_mean_count=1
     
     print('Summarizing...')
     
-    df['pooled_cuts'] = df['cuts'].apply(lambda t: np.sum(np.array(list(t)), axis=0) + cut_pseudo_count)
-    df['mean_cuts'] = df['cuts'].apply(lambda t: np.mean(np.vstack([ (x) for x in list(t) ]), axis=0) + cut_pseudo_count)
+    df['pooled_cuts'] = df['cuts'].apply(lambda t: np.sum(np.array(list(t)), axis=0))
+    df['mean_cuts'] = df['cuts'].apply(lambda t: np.mean(np.vstack([ x for x in list(t) ]), axis=0))
     
     
-    df['pooled_cut_prob'] = df['cuts'].apply(lambda t: np.sum(np.array(list(t)) + cut_pseudo_count, axis=0) / np.sum(np.array(list(t)) + cut_pseudo_count))
-    df['mean_cut_prob'] = df['cuts'].apply( lambda t: np.mean(np.vstack([ (x + cut_pseudo_count) / np.sum(x + cut_pseudo_count) for x in list(t) ]), axis=0) )
+    df['pooled_cut_prob'] = df['cuts'].apply(lambda t: np.sum(np.array(list(t)), axis=0) / np.sum(np.array(list(t))))
+    df['mean_cut_prob'] = df['cuts'].apply( lambda t: np.mean(np.vstack([ x / np.sum(x) for x in list(t) ]), axis=0) )
     
     df['proximal_count'] = df['cuts'].apply(lambda t: tuple([np.sum(x[prox_cut_start: prox_cut_end]) for x in t]))
     
