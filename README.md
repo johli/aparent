@@ -20,7 +20,7 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 
 [Notebook 4a: Human Variant Analysis (Summary)](analysis/analyze_aparent_designed_mpra_variant_summary_legacy.ipynb)<br/>
 [Notebook 4b: Disease-Implicated Variants/UTRs (Detailed)](analysis/analyze_aparent_designed_mpra_pathogenic_utrs_legacy.ipynb)<br/>
-[Notebook 4c: Cleavage-Altering Varaints (Detailed)](analysis/analyze_aparent_designed_mpra_complex_cut_variants_legacy.ipynb)<br/>
+[Notebook 4c: Cleavage-Altering Variants (Detailed)](analysis/analyze_aparent_designed_mpra_complex_cut_variants_legacy.ipynb)<br/>
 
 [Notebook 5a: Complex Functional Variants (Summary)](analysis/analyze_aparent_designed_mpra_rare_functional_variants_summary_legacy.ipynb)<br/>
 [Notebook 5b: Complex Functional Variants (Canonical CSE)](analysis/analyze_aparent_designed_mpra_rare_functional_variants_detailed_canonical_cse_legacy.ipynb)<br/>
