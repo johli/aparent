@@ -3600,10 +3600,12 @@ def plot_gain_loss_of_motifs(df_var, motifs, name_prefix='', plot_logos=False, s
     gain_of_motif_df = df_var.iloc[gain_of_motif_index].copy().set_index('master_seq')
     loss_of_motif_df = df_var.iloc[loss_of_motif_index].copy().set_index('master_seq')
 
+    print("Gain of Motif (Neural Net model)")
     fig_name = None
     if save_figs :
         fig_name = 'gain_of_' + name_prefix + '_neural_net'
     plot_position_delta_scatter(gain_of_motif_df, min_pred_filter=0.0, figsize=(12, 6), fig_name=fig_name, fig_dpi=150, annotate=None)
+    print("Gain of Motif (Hexamer model)")
     fig_name = None
     if save_figs :
         fig_name = 'gain_of_' + name_prefix + '_hexamer_model'
@@ -3624,10 +3626,12 @@ def plot_gain_loss_of_motifs(df_var, motifs, name_prefix='', plot_logos=False, s
     print("### Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(gain_of_motif_df.query("snv_pos >= 56")['delta_logodds_pred']) == np.sign(gain_of_motif_df.query("snv_pos >= 56")['delta_6mer_score']))[0])))
 
 
+    print("Loss of Motif (Neural Net model)")
     fig_name = None
     if save_figs :
         fig_name = 'loss_of_' + name_prefix + '_neural_net'
     plot_position_delta_scatter(loss_of_motif_df, min_pred_filter=0.0, figsize=(12, 6), fig_name=fig_name, fig_dpi=150, annotate=None)
+    print("Loss of Motif (Hexamer model)")
     fig_name = None
     if save_figs :
         fig_name = 'loss_of_' + name_prefix + '_hexamer_model'
@@ -3739,3 +3743,390 @@ def plot_gain_loss_of_motifs(df_var, motifs, name_prefix='', plot_logos=False, s
                     fig_name=None,
                     fig_dpi=150
             )
+
+    return gain_of_motif_df, loss_of_motif_df
+
+def plot_variant_selection(human_variant_df, gene_names, snv_list, wt_seq_list, experiment_name, fold_change_from_cut_range=None, seq_start=48, seq_end=100, save_figs=False) :
+
+    for gene_name, snvs, specific_seq in zip(gene_names, snv_list, wt_seq_list) :
+        df_sel = human_variant_df.set_index('master_seq')
+        if specific_seq is not None :
+            df_sel = human_variant_df.set_index('master_seq').query("wt_seq == '" + specific_seq + "'")
+
+        print('Gene = ' + gene_name)
+        print('WT seq = ' + specific_seq)
+        print('SNV pos = ' + str(snvs[0][0]))
+        print('SNV nt = ' + str(snvs[0][1]))
+        print('ClinVar id = ' + str(df_sel.loc[df_sel.index.str.slice(snvs[0][0], snvs[0][0]+1) == snvs[0][1]].query("gene == '" + gene_name + "' and snv_pos == " + str(snvs[0][0]))['clinvar_id'].values[0]))
+        
+        fig_name = None
+        if save_figs :
+            fig_name = experiment_name + '_' + gene_name + '_' + str(snvs[0][0]) + '_' + str(snvs[0][1]) + '_Both'
+        mut_map_with_cuts(
+                df_sel,
+                gene_name,
+                snvs,
+                mode='true',
+                column_suffix='',
+                figsize=(14, 7),
+                height_ratios=[6, 2, 2],
+                bg_alpha=0.999,
+                plot_simple_mutmap=True,
+                annotate_folds=True,
+                plot_true_cuts=True,
+                plot_pred_cuts=True,
+                scale_pred_cuts=True,
+                fold_change_from_cut_range=fold_change_from_cut_range,
+                ref_var_scales=[0.5, 1.0],
+                border_eta = 0.06,
+                seq_trim_start=seq_start, seq_trim_end=seq_end,
+                plot_start=0, plot_end=seq_end-seq_start,
+                plot_as_bars=False,
+                pas_downscaling=0.5,
+                fig_name=fig_name,
+                fig_dpi=150
+        )
+
+def mut_map_with_cuts_and_fold(df, gene_name, mfe_ref, mfe_var, mfe_struct_ref, mfe_struct_var, cut_snvs, mode, column_suffix='', figsize=(12, 6), fold_height=0.5, height_ratios=[6, 2, 2], bg_alpha=0.5, plot_simple_mutmap=True, annotate_folds=True, plot_true_cuts=True, plot_pred_cuts=False, scale_pred_cuts=False, fold_change_from_cut_range=None, ref_var_scales=[0.3, 0.7], border_eta = 0.085, seq_trim_start=0, seq_trim_end=164, plot_start=0, plot_end=164, plot_as_bars=True, pas_downscaling=0.5, fig_name=None, fig_dpi=300) :
+
+    mut_map = np.zeros((4, 164))
+
+    df_gene = df.query("gene == '" + gene_name + "'")
+    ref_seq = df_gene['wt_seq'].values[0]
+
+    for index, row in df_gene.iterrows() :
+        snv_pos = row['snv_pos']
+        
+        if row['wt_seq'] != ref_seq :
+            continue
+
+        delta_logodds_true = row['delta_logodds_' + mode + column_suffix]
+        if np.isnan(delta_logodds_true) :
+            delta_logodds_true = 0
+
+        base = 0
+        if index[snv_pos] == 'A' :
+            base = 0
+        elif index[snv_pos] == 'C' :
+            base = 1
+        elif index[snv_pos] == 'G' :
+            base = 2
+        elif index[snv_pos] == 'T' :
+            base = 3
+
+        mut_map[3-base, snv_pos] = delta_logodds_true
+
+    #Down-scale PAS mutations
+    mut_map[:, 50:50+6] = mut_map[:, 50:50+6] * pas_downscaling
+    
+    #Slice according to seq trim index
+    ref_seq = ref_seq[seq_trim_start: seq_trim_end]
+    mut_map = mut_map[:, seq_trim_start: seq_trim_end]
+    mfe_struct_ref = mfe_struct_ref[seq_trim_start: seq_trim_end]
+    mfe_struct_var = mfe_struct_var[seq_trim_start: seq_trim_end]
+    
+    fig = plt.figure(figsize=figsize) 
+    gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
+
+    ax0 = plt.subplot(gs[0])
+    ax1 = plt.subplot(gs[1])
+    ax2 = plt.subplot(gs[2])
+    ax = [ax0, ax1, ax2]
+
+    bias = np.max(np.sum(mut_map[:, :], axis=0)) / 3.0 + 0.5
+    max_score = np.min(np.sum(mut_map[:, :], axis=0)) / 3.0 * -1 + bias
+
+    for i in range(plot_start, plot_end) :
+        mutability_score = np.sum(mut_map[:, i]) / 3.0 * -1 + bias
+        
+        color = 'black'
+        alpha = bg_alpha
+        char_height = 1
+        
+        for snv_pos, snv_nt, snv_color in cut_snvs :
+            if i == snv_pos - seq_trim_start :
+                #color = snv_color#None
+                #alpha = 1.0
+                
+                color = 'black'
+                alpha = bg_alpha
+                char_height = ref_var_scales[0]
+                
+                letterAt(snv_nt, i + 0.5, ref_var_scales[0], ref_var_scales[1], ax[1], color=snv_color, alpha=1.0)
+                
+                break
+        
+        if not plot_simple_mutmap :
+            letterAt(ref_seq[i], i + 0.5, 0, mutability_score, ax[1], color=color, alpha=alpha)
+        else :
+            letterAt(ref_seq[i], i + 0.5, 0, char_height, ax[1], color=color, alpha=alpha)
+        
+        if mfe_struct_ref[i] != 'X' :
+            letterAt(mfe_struct_ref[i], i + 0.5, -fold_height, fold_height-0.05, ax[1], color='black')
+        if mfe_struct_var[i] != 'X' :
+            letterAt(mfe_struct_var[i], i + 0.5, -2*fold_height-0.05, fold_height-0.05, ax[1], color='black')
+                
+    annot_text = 'MFE = ' + str(round(mfe_ref, 1))
+    #logo_ax[2].annotate(annot_text, xy=(56, -fold_height/2), xycoords='data', xytext=(-30, 0), ha='right', fontsize=10, weight="bold", color='black', textcoords='offset points', arrowprops=dict(headlength=8, headwidth=8, shrink=0.15, width=1.5, color='black'))
+    ax[1].text(55-seq_trim_start, -fold_height/2 -0.05, annot_text, horizontalalignment='right', verticalalignment='center', color='black', fontsize=12, weight="bold")
+    annot_text = 'MFE = ' + str(round(mfe_var, 1))
+    #logo_ax[2].annotate(annot_text, xy=(56, -fold_height/2), xycoords='data', xytext=(-30, 0), ha='right', fontsize=10, weight="bold", color='black', textcoords='offset points', arrowprops=dict(headlength=8, headwidth=8, shrink=0.15, width=1.5, color='black'))
+    ax[1].text(55-seq_trim_start, -fold_height -fold_height/2 -0.05-0.05, annot_text, horizontalalignment='right', verticalalignment='center', color='black', fontsize=12, weight="bold")
+    
+
+    if not plot_simple_mutmap :
+        ax[1].plot([0, mut_map.shape[1]], [bias, bias], color='black', linestyle='--')
+
+    plt.sca(ax[1])
+    
+    if not plot_simple_mutmap :
+        plt.yticks([0.5, bias, max_score], [round(bias - 0.5, 2), 0, round((max_score - bias) * -1, 2)], fontsize=16)
+        plt.ylim((-2*fold_height-0.175, max_score))
+    else :
+        plt.yticks([], [])
+        plt.ylim((-2*fold_height-0.175, ref_var_scales[0] + ref_var_scales[1]))
+        plt.axis('off')
+    
+    plt.xlim((plot_start, plot_end))
+    plt.tight_layout()
+
+    pcm = ax[2].pcolor(mut_map, cmap='RdBu_r', vmin=-np.abs(mut_map).max(), vmax=np.abs(mut_map).max())
+    #fig.colorbar(pcm, ax=ax[1])
+
+    plt.sca(ax[2])
+
+    ref_seq_list = []
+    for c in ref_seq :
+        ref_seq_list.append(c)
+    #plt.xticks(np.arange(len(ref_seq)) + 0.5, ref_seq_list)
+    plt.xticks([], [])
+
+    plt.yticks([0.5, 1.5, 2.5, 3.5], ['T', 'G', 'C', 'A'], fontsize=16)
+
+    #plt.gca().xaxis.tick_top()
+    #plt.xticks(fontsize=16)
+
+    plt.axis([plot_start, plot_end, 0, 4])
+    
+    for i in range(plot_start, plot_end) :
+        for j in range(0, 4) :
+            base = 'A'
+            if j == 3 :
+                base = 'A'
+            elif j == 2 :
+                base = 'C'
+            elif j == 1 :
+                base = 'G'
+            elif j == 0 :
+                base = 'T'
+            
+            is_marked = False
+            for snv_pos, snv_nt, _ in cut_snvs :
+                if i == snv_pos - seq_trim_start and base == snv_nt :
+                    is_marked = True
+                    break
+            
+            if not is_marked :
+                ax[2].add_patch(Rectangle((i, j), 1, 1, fill=True, facecolor='white', alpha=1. - bg_alpha, edgecolor=None))
+    
+    ref_cut_true = df_gene['cut_prob_true_ref'].values[0][seq_trim_start: seq_trim_end]
+    ref_cut_pred = df_gene['cut_prob_pred_ref'].values[0][seq_trim_start: seq_trim_end]
+    
+    max_y_var_hat = 0
+    for snv_pos, snv_nt, snv_color in cut_snvs :
+        df_pos = df_gene.query("snv_pos == " + str(snv_pos))
+        
+        var_cut_true = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_var'][0][seq_trim_start: seq_trim_end]
+        var_cut_pred = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0][seq_trim_start: seq_trim_end]
+        
+        if scale_pred_cuts :
+            ref_pred_logodds = np.zeros(ref_cut_pred.shape)
+            var_pred_logodds = np.zeros(var_cut_pred.shape)
+
+            ref_pred_logodds[ref_cut_pred > 0.0] = np.log(ref_cut_pred[ref_cut_pred > 0.0] / (1.0 - ref_cut_pred[ref_cut_pred > 0.0]))
+            var_pred_logodds[var_cut_pred > 0.0] = np.log(var_cut_pred[var_cut_pred > 0.0] / (1.0 - var_cut_pred[var_cut_pred > 0.0]))
+
+            pred_fold_change = np.exp(var_pred_logodds - ref_pred_logodds)
+
+            #var_cut_pred = ref_cut_true * pred_fold_change
+            ref_cut_true_odds = ref_cut_true / (1. - ref_cut_true)
+            var_cut_pred_odds = ref_cut_true_odds * pred_fold_change
+            var_cut_pred = var_cut_pred_odds / (1. + var_cut_pred_odds)
+        
+        if plot_true_cuts :
+            max_y_var_hat = max(max_y_var_hat, np.max(var_cut_true[plot_start:plot_end]))
+        if plot_pred_cuts :
+            max_y_var_hat = max(max_y_var_hat, np.max(var_cut_pred[plot_start:plot_end]))
+        
+        if plot_as_bars :
+            if plot_true_cuts :
+                ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_true[plot_start:plot_end], color=snv_color, alpha=0.85, where='mid', linewidth=3)
+            if plot_pred_cuts :
+                ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_pred[plot_start:plot_end], color=snv_color, linestyle='--', alpha=0.85, where='mid', linewidth=3)
+        else :
+            if plot_true_cuts :
+                ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_true[plot_start:plot_end], color=snv_color, linestyle='-', linewidth=3, alpha=0.7)
+            if plot_pred_cuts :
+                ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_pred[plot_start:plot_end], color=snv_color, linestyle='--', linewidth=3, alpha=0.7)
+        
+        #Highlight specific snv in mutation map
+        
+        base = 0
+        if snv_nt == 'A' :
+            base = 0
+        elif snv_nt == 'C' :
+            base = 1
+        elif snv_nt == 'G' :
+            base = 2
+        elif snv_nt == 'T' :
+            base = 3
+        
+        #ax[2].add_patch(Rectangle((snv_pos, 3 - base), 1, 1, fill=False, edgecolor=snv_color, lw=4))
+        ax[2].add_patch(Rectangle((snv_pos - seq_trim_start + border_eta, 3 - base + border_eta), 1 - 2.*border_eta, 1 - 2.*border_eta, fill=False, edgecolor=snv_color, lw=4))
+        #ax[1].add_patch(Rectangle((snv_pos, 0), 1, max_score, fill=False, edgecolor=snv_color, lw=4))
+    
+    if plot_true_cuts :
+        max_y_var_hat = max(max_y_var_hat, np.max(ref_cut_true[plot_start:plot_end]))
+    if plot_pred_cuts and not scale_pred_cuts :
+        max_y_var_hat = max(max_y_var_hat, np.max(ref_cut_pred[plot_start:plot_end]))
+    
+    #Annotate min/max delta isoform log odds
+    min_mutmap_logodds = round((max_score - bias) * -1, 2)
+    max_mutmap_logodds = round(bias - 0.5, 2)
+    annot_text = 'Min = ' + str(min_mutmap_logodds) + '\nMax = ' + str(max_mutmap_logodds)
+    
+    ax[0].text(0.05, 0.80, annot_text,
+        horizontalalignment='left', verticalalignment='bottom',
+        transform=ax[0].transAxes,
+        color='black', fontsize=16, weight="bold")
+    
+    snv_i = 0
+    for snv_pos, snv_nt, snv_color in cut_snvs :
+        if annotate_folds :
+            if plot_true_cuts :
+                
+                df_pos = df_gene.query("snv_pos == " + str(snv_pos))
+                df_pos = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]
+                
+                fold_change = np.exp(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['delta_logodds_true' + column_suffix][0])
+                
+                if fold_change_from_cut_range :
+                    fold_range_start = fold_change_from_cut_range[0]
+                    fold_range_end = fold_change_from_cut_range[1]
+                    
+                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_ref'][0][fold_range_start: fold_range_end])
+                    var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_var'][0][fold_range_start: fold_range_end])
+                    
+                    fold_change = (var_p / (1. - var_p)) / (ref_p / (1. - ref_p))
+                
+                
+                fold_color = 'darkgreen'
+                if fold_change < 1. :
+                    fold_color = 'red'
+                    fold_change = 1. / fold_change
+                #fold_color = snv_color
+                
+                row_multiplier = 0.1
+                row_bias = 0
+                if plot_pred_cuts :
+                    row_multiplier = 0.2
+                
+                ax[0].text(0.70, 0.80 - row_multiplier * snv_i, snv_nt + ':',
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=snv_color, fontsize=16, weight="bold")
+                ax[0].text(0.73, 0.80 - row_multiplier * snv_i, 'Fold change = ' + str(round(fold_change, 2)),
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=fold_color, fontsize=16, weight="bold")
+            
+            if plot_pred_cuts :
+                
+                df_pos = df_gene.query("snv_pos == " + str(snv_pos))
+                df_pos = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]
+                
+                fold_change = np.exp(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['delta_logodds_pred' + column_suffix][0])
+                
+                if fold_change_from_cut_range :
+                    fold_range_start = fold_change_from_cut_range[0]
+                    fold_range_end = fold_change_from_cut_range[1]
+                    
+                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_ref'][0][fold_range_start: fold_range_end])
+                    var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0][fold_range_start: fold_range_end])
+                    
+                    if scale_pred_cuts :
+                        ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_ref'][0][fold_range_start: fold_range_end])
+                        
+                        ref_cut_true_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_ref'][0]#[0: seq_trim_end]
+                        ref_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_ref'][0]#[0: seq_trim_end]
+                        var_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0]#[0: seq_trim_end]
+
+                        ref_pred_logodds = np.zeros(ref_cut_pred_t.shape)
+                        var_pred_logodds = np.zeros(var_cut_pred_t.shape)
+
+                        ref_pred_logodds[ref_cut_pred_t > 0.0] = np.log(ref_cut_pred_t[ref_cut_pred_t > 0.0] / (1.0 - ref_cut_pred_t[ref_cut_pred_t > 0.0]))
+                        var_pred_logodds[var_cut_pred_t > 0.0] = np.log(var_cut_pred_t[var_cut_pred_t > 0.0] / (1.0 - var_cut_pred_t[var_cut_pred_t > 0.0]))
+
+                        pred_fold_change = np.exp(var_pred_logodds - ref_pred_logodds)
+
+                        #var_cut_pred = ref_cut_true * pred_fold_change
+                        ref_cut_true_odds = ref_cut_true_t / (1. - ref_cut_true_t)
+                        var_cut_pred_odds = ref_cut_true_odds * pred_fold_change
+                        var_cut_pred_t = var_cut_pred_odds / (1. + var_cut_pred_odds)
+                        var_p = np.sum(var_cut_pred_t[fold_range_start: fold_range_end])
+                    
+                    fold_change = (var_p / (1. - var_p)) / (ref_p / (1. - ref_p))
+                
+                
+                fold_color = 'darkgreen'
+                if fold_change < 1. :
+                    fold_color = 'red'
+                    fold_change = 1. / fold_change
+                #fold_color = snv_color
+                
+                row_multiplier = 0.1
+                row_bias = 0.0
+                if plot_true_cuts :
+                    row_multiplier = 0.2
+                    row_bias = 0.1
+                
+                ax[0].text(0.70, 0.80 - row_multiplier * snv_i - row_bias, snv_nt + ':',
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=snv_color, fontsize=16, weight="bold")
+                ax[0].text(0.73, 0.80 - row_multiplier * snv_i - row_bias, 'Predicted change = ' + str(round(fold_change, 2)),
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=fold_color, fontsize=16, weight="bold")
+        
+        snv_i += 1
+    
+    #Plot reference cut distribution
+    if plot_as_bars :
+        if plot_true_cuts :
+            ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_true[plot_start:plot_end], color='black', alpha=0.85, where='mid', linewidth=3)
+        if plot_pred_cuts and not scale_pred_cuts :
+            ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_pred[plot_start:plot_end], color='black', linestyle='--', alpha=0.85, where='mid', linewidth=3)
+    else :
+        if plot_true_cuts :
+            ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_true[plot_start:plot_end], color='black', linestyle='-', linewidth=3, alpha=0.7)    
+        if plot_pred_cuts and not scale_pred_cuts :
+            ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_pred[plot_start:plot_end], color='black', linestyle='--', linewidth=3, alpha=0.7)
+
+    #ax[0].plot([57, 57], [0, max(np.max(ref_cut[:164]), max_y_var_hat)], color='green', linestyle='--', linewidth=3)
+    #ax[0].plot([97, 97], [0, max(np.max(ref_cut[:164]), max_y_var_hat)], color='green', linestyle='--', linewidth=3)
+
+    plt.sca(ax[0])
+    plt.xlim((plot_start, plot_end))
+    plt.yticks(fontsize=16)
+    plt.ylim(0, max_y_var_hat * 1.02)
+
+    plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    plt.tight_layout()
+    
+    if fig_name is not None :
+        plt.savefig(fig_name + '.png', transparent=True, dpi=fig_dpi)
+        plt.savefig(fig_name + '.svg')
+        plt.savefig(fig_name + '.eps')
+    plt.show()
+
