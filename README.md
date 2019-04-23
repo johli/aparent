@@ -6,7 +6,7 @@ APAReNt was trained on >3.5 million randomized 3' UTR polyadenylation signals ex
 Forward-engineering of new polyadenylation signals is done using the included SeqProp (Stochastic Sequence Backpropagation) software, which implements a gradient-based input maximization algorithm and uses APAReNt as the predictor.
 
 
-# Designed MPRA Analysis Notebooks:
+# Designed MPRA Analysis Notebooks
 [Notebook 0a: Basic MPRA Library Statistics](analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
 [Notebook 0b: MPRA LoFi vs. HiFi Replicates](analysis/analyze_aparent_designed_mpra_lofi_vs_hifi_legacy.ipynb)<br/>
 
