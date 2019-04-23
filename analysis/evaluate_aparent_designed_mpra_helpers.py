@@ -2437,14 +2437,14 @@ def mut_map_with_cuts(df, gene_name, cut_snvs, mode, column_suffix='', figsize=(
             if not is_marked :
                 ax[2].add_patch(Rectangle((i, j), 1, 1, fill=True, facecolor='white', alpha=1. - bg_alpha, edgecolor=None))
     
-    ref_cut_true = df_gene['pooled_cut_prob_true_wt'].values[0][seq_trim_start: seq_trim_end]
-    ref_cut_pred = df_gene['cut_prob_pred_wt'].values[0][seq_trim_start: seq_trim_end]
+    ref_cut_true = df_gene['cut_prob_true_ref'].values[0][seq_trim_start: seq_trim_end]
+    ref_cut_pred = df_gene['cut_prob_pred_ref'].values[0][seq_trim_start: seq_trim_end]
     
     max_y_var_hat = 0
     for snv_pos, snv_nt, snv_color in cut_snvs :
         df_pos = df_gene.query("snv_pos == " + str(snv_pos))
         
-        var_cut_true = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_var'][0][seq_trim_start: seq_trim_end]
+        var_cut_true = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_var'][0][seq_trim_start: seq_trim_end]
         var_cut_pred = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0][seq_trim_start: seq_trim_end]
         
         if scale_pred_cuts :
@@ -2522,8 +2522,8 @@ def mut_map_with_cuts(df, gene_name, cut_snvs, mode, column_suffix='', figsize=(
                     fold_range_start = fold_change_from_cut_range[0]
                     fold_range_end = fold_change_from_cut_range[1]
                     
-                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_wt'][0][fold_range_start: fold_range_end])
-                    var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_var'][0][fold_range_start: fold_range_end])
+                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_ref'][0][fold_range_start: fold_range_end])
+                    var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_var'][0][fold_range_start: fold_range_end])
                     
                     fold_change = (var_p / (1. - var_p)) / (ref_p / (1. - ref_p))
                 
@@ -2559,14 +2559,14 @@ def mut_map_with_cuts(df, gene_name, cut_snvs, mode, column_suffix='', figsize=(
                     fold_range_start = fold_change_from_cut_range[0]
                     fold_range_end = fold_change_from_cut_range[1]
                     
-                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_wt'][0][fold_range_start: fold_range_end])
+                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_ref'][0][fold_range_start: fold_range_end])
                     var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0][fold_range_start: fold_range_end])
                     
                     if scale_pred_cuts :
-                        ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_wt'][0][fold_range_start: fold_range_end])
+                        ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_ref'][0][fold_range_start: fold_range_end])
                         
-                        ref_cut_true_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_wt'][0]#[0: seq_trim_end]
-                        ref_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_wt'][0]#[0: seq_trim_end]
+                        ref_cut_true_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_true_ref'][0]#[0: seq_trim_end]
+                        ref_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_ref'][0]#[0: seq_trim_end]
                         var_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0]#[0: seq_trim_end]
 
                         ref_pred_logodds = np.zeros(ref_cut_pred_t.shape)
