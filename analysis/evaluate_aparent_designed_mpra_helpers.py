@@ -3508,3 +3508,234 @@ def plot_individual_tgta_map_nonlin(wt_seq, tgta_1_df, tgta_2_df, plot_start=Non
     plt.tight_layout()
     plt.show()
 
+def append_6mer_delta_logodds_scores(var_df, mer6_weights_use, mer6_weights_pas, mer6_weights_dse) :
+    mer6_dict = {}
+    mer6_list = []
+    i = 0
+    bases = ['A', 'C', 'G', 'T']
+    for b1 in bases :
+        for b2 in bases :
+            for b3 in bases :
+                for b4 in bases :
+                    for b5 in bases :
+                        for b6 in bases :
+                            mer6_dict[b1 + b2 + b3 + b4 + b5 + b6] = i
+                            mer6_list.append(b1 + b2 + b3 + b4 + b5 + b6)
+                            i += 1
+
+    delta_6mer_scores = []
+
+    for _, row in var_df.iterrows() :
+        
+        snv_pos = row['snv_pos']
+        
+        var_seq = row['master_seq']
+        ref_seq = row['wt_seq']
+        
+        delta_score = 0
+        
+        mer6_weights = mer6_weights_use
+        if snv_pos >= 50 and snv_pos <= 56 :
+            mer6_weights = mer6_weights_pas
+        elif snv_pos > 56 :
+            mer6_weights = mer6_weights_dse
+        
+        for offset in range(-6 + 1, 6 - 1) :
+            
+            var_motif = var_seq[snv_pos+offset:snv_pos+offset + 6]
+            if len(var_motif) == 6 :
+                delta_score += mer6_weights[mer6_dict[var_motif]]
+            
+            ref_motif = ref_seq[snv_pos+offset:snv_pos+offset + 6]
+            if len(ref_motif) == 6 :
+                delta_score -= mer6_weights[mer6_dict[ref_motif]]
+        
+        delta_6mer_scores.append(delta_score)
+
+    var_df['delta_6mer_score'] = delta_6mer_scores
+
+    return var_df
+
+def plot_gain_loss_of_motifs(df_var, motifs, name_prefix='', plot_logos=False, save_figs=False) :
+
+    gain_of_motif_index = []
+    loss_of_motif_index = []
+
+    for motif in motifs :
+        i = 0
+        for _, row in df_var.iterrows() :
+
+            snv_pos = row['snv_pos']
+
+            var_seq = row['master_seq']
+            ref_seq = row['wt_seq']
+
+            motif_len = len(motif)
+
+            var_motif_dict = {}
+            ref_motif_dict = {}
+            for offset in range(-motif_len + 1, motif_len - 1) :
+
+                var_motif = var_seq[snv_pos+offset:snv_pos+offset + motif_len]
+                if len(var_motif) == motif_len :
+                    if var_motif not in var_motif_dict :
+                        var_motif_dict[var_motif] = 0
+                    var_motif_dict[var_motif] += 1
+
+                ref_motif = ref_seq[snv_pos+offset:snv_pos+offset + motif_len]
+                if len(ref_motif) == motif_len :
+                    if ref_motif not in ref_motif_dict :
+                        ref_motif_dict[ref_motif] = 0
+                    ref_motif_dict[ref_motif] += 1
+
+            if motif in var_motif_dict and motif not in ref_motif_dict :
+                gain_of_motif_index.append(i)
+            elif motif not in var_motif_dict and motif in ref_motif_dict :
+                loss_of_motif_index.append(i)
+
+            i += 1
+
+
+
+    gain_of_motif_df = df_var.iloc[gain_of_motif_index].copy().set_index('master_seq')
+    loss_of_motif_df = df_var.iloc[loss_of_motif_index].copy().set_index('master_seq')
+
+    fig_name = None
+    if save_figs :
+        fig_name = 'gain_of_' + name_prefix + '_neural_net'
+    plot_position_delta_scatter(gain_of_motif_df, min_pred_filter=0.0, figsize=(12, 6), fig_name=fig_name, fig_dpi=150, annotate=None)
+    fig_name = None
+    if save_figs :
+        fig_name = 'gain_of_' + name_prefix + '_hexamer_model'
+    plot_position_delta_scatter(gain_of_motif_df, min_pred_filter=0.0, figsize=(12, 6), pred_column='delta_6mer_score', fig_name=fig_name, fig_dpi=150, annotate=None)
+
+    print('')
+    print('# Gain of ' + str(motifs) + ' = ' + str(len(gain_of_motif_df)))
+    print("# Neural net / Observation agreement = " + str(len(np.nonzero(np.sign(gain_of_motif_df['delta_logodds_pred']) == np.sign(gain_of_motif_df['delta_logodds_true']))[0])))
+    print("# Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(gain_of_motif_df['delta_logodds_pred']) == np.sign(gain_of_motif_df['delta_6mer_score']))[0])))
+    print('## Gain of motif in USE = ' + str(len(gain_of_motif_df.query("snv_pos < 50"))))
+    print('### Gain of motif, Loss of function = ' + str(len(gain_of_motif_df.query("snv_pos < 50 and delta_logodds_true < 0.0"))))
+    print('### Gain of motif, Gain of function = ' + str(len(gain_of_motif_df.query("snv_pos < 50 and delta_logodds_true > 0.0"))))
+    print("### Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(gain_of_motif_df.query("snv_pos < 50")['delta_logodds_pred']) == np.sign(gain_of_motif_df.query("snv_pos < 50")['delta_6mer_score']))[0])))
+
+    print('## Gain of motif in DSE = ' + str(len(gain_of_motif_df.query("snv_pos >= 56"))))
+    print('### Gain of motif, Loss of function = ' + str(len(gain_of_motif_df.query("snv_pos >= 56 and delta_logodds_true < 0.0"))))
+    print('### Gain of motif, Gain of function = ' + str(len(gain_of_motif_df.query("snv_pos >= 56 and delta_logodds_true > 0.0"))))
+    print("### Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(gain_of_motif_df.query("snv_pos >= 56")['delta_logodds_pred']) == np.sign(gain_of_motif_df.query("snv_pos >= 56")['delta_6mer_score']))[0])))
+
+
+    fig_name = None
+    if save_figs :
+        fig_name = 'loss_of_' + name_prefix + '_neural_net'
+    plot_position_delta_scatter(loss_of_motif_df, min_pred_filter=0.0, figsize=(12, 6), fig_name=fig_name, fig_dpi=150, annotate=None)
+    fig_name = None
+    if save_figs :
+        fig_name = 'loss_of_' + name_prefix + '_hexamer_model'
+    plot_position_delta_scatter(loss_of_motif_df, min_pred_filter=0.0, figsize=(12, 6), pred_column='delta_6mer_score', fig_name=fig_name, fig_dpi=150, annotate=None)
+
+    print('')
+    print('# Loss of ' + str(motifs) + ' = ' + str(len(loss_of_motif_df)))
+    print("# Neural net / Observation agreement = " + str(len(np.nonzero(np.sign(loss_of_motif_df['delta_logodds_pred']) == np.sign(loss_of_motif_df['delta_logodds_true']))[0])))
+    print("# Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(loss_of_motif_df['delta_logodds_pred']) == np.sign(loss_of_motif_df['delta_6mer_score']))[0])))
+    print('## Loss of motif in USE = ' + str(len(loss_of_motif_df.query("snv_pos < 50"))))
+    print('### Loss of motif, Loss of function = ' + str(len(loss_of_motif_df.query("snv_pos < 50 and delta_logodds_true < 0.0"))))
+    print('### Loss of motif, Gain of function = ' + str(len(loss_of_motif_df.query("snv_pos < 50 and delta_logodds_true > 0.0"))))
+    print("### Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(loss_of_motif_df.query("snv_pos < 50")['delta_logodds_pred']) == np.sign(loss_of_motif_df.query("snv_pos < 50")['delta_6mer_score']))[0])))
+
+    print('## Loss of motif in DSE = ' + str(len(loss_of_motif_df.query("snv_pos >= 56"))))
+    print('### Loss of motif, Loss of function = ' + str(len(loss_of_motif_df.query("snv_pos >= 56 and delta_logodds_true < 0.0"))))
+    print('### Loss of motif, Gain of function = ' + str(len(loss_of_motif_df.query("snv_pos >= 56 and delta_logodds_true > 0.0"))))
+    print("### Neural net / 6-mer model agreement = " + str(len(np.nonzero(np.sign(loss_of_motif_df.query("snv_pos >= 56")['delta_logodds_pred']) == np.sign(loss_of_motif_df.query("snv_pos >= 56")['delta_6mer_score']))[0])))
+
+    if plot_logos :
+        print("Plotting Gain of Motif logos in sorted order.")
+
+        df_sel = gain_of_motif_df.query("snv_pos >= 57 and delta_logodds_true > 0.0").sort_values(by='delta_logodds_true', ascending=False)
+
+        seq_start = 48
+        seq_end = 130
+
+        for index, row in df_sel.iterrows() :
+            
+            gene_name = row['gene']
+            snv_pos = row['snv_pos']
+            
+            snv_nt = index[snv_pos]
+            
+            wt_seq = row['wt_seq']
+            
+            print('Gene = ' + gene_name)
+            print('WT seq = ' + wt_seq)
+            print('SNV pos = ' + str(snv_pos))
+            print('SNV nt = ' + snv_nt)
+            
+            mut_map_with_cuts(
+                    seq_predicted_isoform_df_delta.query("wt_seq == '" + wt_seq + "'"),
+                    gene_name,
+                    [(snv_pos, snv_nt, 'darkgreen' if row['delta_logodds_true'] > 0 else 'red')],
+                    mode='true',
+                    column_suffix='',
+                    figsize=(14, 7),
+                    height_ratios=[6, 2, 2],
+                    bg_alpha=0.999,
+                    plot_simple_mutmap=True,
+                    annotate_folds=True,
+                    plot_true_cuts=True,
+                    plot_pred_cuts=True,
+                    scale_pred_cuts=True,
+                    fold_change_from_cut_range=[60, 100],
+                    ref_var_scales=[0.5, 1.0],
+                    border_eta = 0.06,
+                    seq_trim_start=seq_start, seq_trim_end=seq_end,
+                    plot_start=0, plot_end=seq_end-seq_start,
+                    plot_as_bars=False,
+                    pas_downscaling=0.5,
+                    fig_name=None,
+                    fig_dpi=150
+            )
+        
+        print("Plotting Loss of Motif logos in sorted order.")
+
+        df_sel = loss_of_motif_df.query("snv_pos >= 57").sort_values(by='delta_logodds_true')
+
+        seq_start = 48
+        seq_end = 130
+
+        for index, row in df_sel.iterrows() :
+            
+            gene_name = row['gene']
+            snv_pos = row['snv_pos']
+            
+            snv_nt = index[snv_pos]
+            
+            wt_seq = row['wt_seq']
+            
+            print('Gene = ' + gene_name)
+            print('WT seq = ' + wt_seq)
+            print('SNV pos = ' + str(snv_pos))
+            print('SNV nt = ' + snv_nt)
+            
+            mut_map_with_cuts(
+                    seq_predicted_isoform_df_delta.query("wt_seq == '" + wt_seq + "'"),
+                    gene_name,
+                    [(snv_pos, snv_nt, 'darkgreen' if row['delta_logodds_true'] > 0 else 'red')],
+                    mode='true',
+                    column_suffix='',
+                    figsize=(14, 7),
+                    height_ratios=[6, 2, 2],
+                    bg_alpha=0.999,
+                    plot_simple_mutmap=True,
+                    annotate_folds=True,
+                    plot_true_cuts=True,
+                    plot_pred_cuts=True,
+                    scale_pred_cuts=True,
+                    fold_change_from_cut_range=[60, 100],
+                    ref_var_scales=[0.5, 1.0],
+                    border_eta = 0.06,
+                    seq_trim_start=seq_start, seq_trim_end=seq_end,
+                    plot_start=0, plot_end=seq_end-seq_start,
+                    plot_as_bars=False,
+                    pas_downscaling=0.5,
+                    fig_name=None,
+                    fig_dpi=150
+            )
