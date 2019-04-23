@@ -138,6 +138,78 @@ def find_wt_yhat(wt_seq, pwms, cuts) :
     
     return cuts[min_i, :]
 
+def append_predictions(seq_df, seq_cuts, variant_df, variant_cuts_var, variant_cuts_ref, pred_df, cuts_pred) :
+    #Join dataframe with prediction table and calculate true cut probabilities
+
+    seq_df['row_index_true'] = np.arange(len(seq_df), dtype=np.int)
+    pred_df['row_index_pred'] = np.arange(len(pred_df), dtype=np.int)
+
+    seq_df = seq_df.join(pred_df.set_index('master_seq'), on='master_seq', how='inner').copy().reset_index(drop=True)
+
+    seq_cuts = seq_cuts[np.ravel(seq_df['row_index_true'].values), :]
+    cut_pred = np.array(cuts_pred[np.ravel(seq_df['row_index_pred'].values), :].todense())
+    cut_pred = np.concatenate([np.zeros((cut_pred.shape[0], 1)), cut_pred[:, :184], cut_pred[:, 185].reshape(-1, 1)], axis=-1)
+
+    cut_true = np.concatenate([np.array(seq_cuts[:, 180 + 20: 180 + 205].todense()), np.array(seq_cuts[:, -1].todense()).reshape(-1, 1)], axis=-1)
+    #Add small pseudo count to true cuts
+    cut_true += 0.0005
+    cut_true = cut_true / np.sum(cut_true, axis=-1).reshape(-1, 1)
+
+    seq_df['cut_prob_true'] = [cut_true[i, :] for i in range(len(seq_df))]
+    seq_df['cut_prob_pred'] = [cut_pred[i, :] for i in range(len(seq_df))]
+
+
+    seq_df['iso_pred_from_cuts'] = np.sum(cut_pred[:, 49: 90], axis=-1)
+    seq_df['logodds_pred_from_cuts'] = np.log(seq_df['iso_pred_from_cuts'] / (1.0 - seq_df['iso_pred_from_cuts']))
+
+    seq_df['mean_logodds_pred'] = (seq_df['logodds_pred'] + seq_df['logodds_pred_from_cuts']) / 2.0
+
+    #Join variant dataframe with prediction table and calculate true cut probabilities
+
+    variant_df['row_index_true'] = np.arange(len(variant_df), dtype=np.int)
+
+    variant_df = variant_df.join(pred_df.rename(columns={'iso_pred' : 'iso_pred_var', 'logodds_pred' : 'logodds_pred_var', 'row_index_pred' : 'row_index_pred_var'}).set_index('master_seq'), on='master_seq', how='inner').copy().reset_index(drop=True)
+    variant_df = variant_df.join(pred_df.rename(columns={'iso_pred' : 'iso_pred_ref', 'logodds_pred' : 'logodds_pred_ref', 'row_index_pred' : 'row_index_pred_ref'}).set_index('master_seq'), on='wt_seq', how='inner').copy().reset_index(drop=True)
+
+    variant_cuts_var = variant_cuts_var[np.ravel(variant_df['row_index_true'].values), :]
+    variant_cuts_ref = variant_cuts_ref[np.ravel(variant_df['row_index_true'].values), :]
+
+    cut_true_var = np.concatenate([np.array(variant_cuts_var[:, 180 + 20: 180 + 205].todense()), np.array(variant_cuts_var[:, -1].todense()).reshape(-1, 1)], axis=-1)
+    #Add small pseudo count to true cuts
+    cut_true_var += 0.0005
+    cut_true_var = cut_true_var / np.sum(cut_true_var, axis=-1).reshape(-1, 1)
+
+    cut_true_ref = np.concatenate([np.array(variant_cuts_ref[:, 180 + 20: 180 + 205].todense()), np.array(variant_cuts_ref[:, -1].todense()).reshape(-1, 1)], axis=-1)
+    #Add small pseudo count to true cuts
+    cut_true_ref += 0.0005
+    cut_true_ref = cut_true_ref / np.sum(cut_true_ref, axis=-1).reshape(-1, 1)
+
+    cut_pred_var = np.array(cuts_pred[np.ravel(variant_df['row_index_pred_var'].values), :].todense())
+    cut_pred_var = np.concatenate([np.zeros((cut_pred_var.shape[0], 1)), cut_pred_var[:, :184], cut_pred_var[:, 185].reshape(-1, 1)], axis=-1)
+
+    cut_pred_ref = np.array(cuts_pred[np.ravel(variant_df['row_index_pred_ref'].values), :].todense())
+    cut_pred_ref = np.concatenate([np.zeros((cut_pred_ref.shape[0], 1)), cut_pred_ref[:, :184], cut_pred_ref[:, 185].reshape(-1, 1)], axis=-1)
+
+    variant_df['cut_prob_true_var'] = [cut_true_var[i, :] for i in range(len(variant_df))]
+    variant_df['cut_prob_pred_var'] = [cut_pred_var[i, :] for i in range(len(variant_df))]
+
+    variant_df['cut_prob_true_ref'] = [cut_true_ref[i, :] for i in range(len(variant_df))]
+    variant_df['cut_prob_pred_ref'] = [cut_pred_ref[i, :] for i in range(len(variant_df))]
+
+
+    variant_df['iso_pred_from_cuts_var'] = np.sum(cut_pred_var[:, 49: 90], axis=-1)
+    variant_df['iso_pred_from_cuts_ref'] = np.sum(cut_pred_ref[:, 49: 90], axis=-1)
+    variant_df['logodds_pred_from_cuts_var'] = np.log(variant_df['iso_pred_from_cuts_var'] / (1.0 - variant_df['iso_pred_from_cuts_var']))
+    variant_df['logodds_pred_from_cuts_ref'] = np.log(variant_df['iso_pred_from_cuts_ref'] / (1.0 - variant_df['iso_pred_from_cuts_ref']))
+
+    variant_df['delta_logodds_pred'] = variant_df['logodds_pred_var'] - variant_df['logodds_pred_ref']
+    variant_df['delta_logodds_pred_from_cuts'] = variant_df['logodds_pred_from_cuts_var'] - variant_df['logodds_pred_from_cuts_ref']
+
+    variant_df['mean_delta_logodds_pred'] = (variant_df['delta_logodds_pred'] + variant_df['delta_logodds_pred_from_cuts']) / 2.0
+
+    return seq_df, variant_df
+
+
 def aggregate_and_append_predictions(seq_df, seq_cuts, pred_df, cuts_pred) :
     #Aggregate predictions over barcoded replicates
 
@@ -2636,5 +2708,803 @@ def mut_map_with_cuts(df, gene_name, cut_snvs, mode, column_suffix='', figsize=(
         plt.savefig(fig_name + '.png', transparent=True, dpi=fig_dpi)
         plt.savefig(fig_name + '.svg')
         plt.savefig(fig_name + '.eps')
+    plt.show()
+
+def append_apadb_isoform_usage(apadb_df, human_variant_df, human_variant_df_filtered) :
+    #Add native APADB isoform abundance measurements
+
+    pseudo_count = 1.0
+    apadb_df['reads'] = apadb_df['reads'] + pseudo_count
+
+    apadb_df = apadb_df.sort_values(by='reads')
+    keep_index = []
+    marked_genes = {}
+    for index, row in apadb_df.iterrows() :
+        if row['gene'] not in marked_genes :
+            marked_genes[row['gene']] = True
+            keep_index.append(index)
+    apadb_df = apadb_df.loc[keep_index]
+
+    apadb_df['gene_fam'] = apadb_df['gene'].apply(lambda x: x.split('.')[0])
+    apadb_df['total_reads'] = apadb_df.groupby('gene_fam')['reads'].transform('sum')
+    apadb_df['native_usage'] = apadb_df['reads'] / apadb_df['total_reads']
+
+    apadb_df = apadb_df[['gene', 'native_usage']]
+    apadb_df = apadb_df.set_index('gene')
+
+    #Add scaled dPSI measure to variant array dataframe
+
+    apadb_variant_df = human_variant_df.join(apadb_df, on='gene', how='left')
+    apadb_variant_df_filtered = human_variant_df_filtered.join(apadb_df, on='gene', how='left')
+
+    apadb_variant_df['native_usage_ref'] = apadb_variant_df['native_usage']
+    apadb_variant_df['native_usage_true_var'] = 1. - 1. / (1. + (apadb_variant_df['native_usage'] / (1. - apadb_variant_df['native_usage'])) * np.exp(apadb_variant_df['delta_logodds_true']))
+    apadb_variant_df['native_usage_pred_var'] = 1. - 1. / (1. + (apadb_variant_df['native_usage'] / (1. - apadb_variant_df['native_usage'])) * np.exp(apadb_variant_df['delta_logodds_pred']))
+
+    apadb_variant_df['delta_psi_true'] = apadb_variant_df['native_usage_true_var'] - apadb_variant_df['native_usage_ref']
+    apadb_variant_df['delta_psi_pred'] = apadb_variant_df['native_usage_pred_var'] - apadb_variant_df['native_usage_ref']
+
+
+    apadb_variant_df_filtered['native_usage_ref'] = apadb_variant_df_filtered['native_usage']
+    apadb_variant_df_filtered['native_usage_true_var'] = 1. - 1. / (1. + (apadb_variant_df_filtered['native_usage'] / (1. - apadb_variant_df_filtered['native_usage'])) * np.exp(apadb_variant_df_filtered['delta_logodds_true']))
+    apadb_variant_df_filtered['native_usage_pred_var'] = 1. - 1. / (1. + (apadb_variant_df_filtered['native_usage'] / (1. - apadb_variant_df_filtered['native_usage'])) * np.exp(apadb_variant_df_filtered['delta_logodds_pred']))
+
+    apadb_variant_df_filtered['delta_psi_true'] = apadb_variant_df_filtered['native_usage_true_var'] - apadb_variant_df_filtered['native_usage_ref']
+    apadb_variant_df_filtered['delta_psi_pred'] = apadb_variant_df_filtered['native_usage_pred_var'] - apadb_variant_df_filtered['native_usage_ref']
+
+    return apadb_variant_df, apadb_variant_df_filtered
+
+def plot_count_regions(df, no_denovo=False, plot_frac=False, count_vs_all=True, annotation_height=1.0, significance_level=1.0, delta_threshes=[], delta_linestyles=[], figsize=(8,6), fig_name=None, plot_start=-50, plot_end=100, fig_dpi=300, pred_column='delta_logodds_pred', true_column='delta_logodds_true', snv_pos_column='snv_pos') :
+    fig = plt.figure(figsize=figsize)
+    
+    df_orig = df.copy()
+    
+    df = df.query("delta_p_val < " + str(significance_level))
+    
+    df = df.query("variant != 'indel'")
+    
+    if no_denovo :
+        pas_dict = {
+            'AATAAA' : True,
+            'ATTAAA' : True,
+            'TATAAA' : True,
+            'GATAAA' : True,
+            'CATAAA' : True,
+            'AGTAAA' : True,
+            'ACTAAA' : True,
+        }
+        
+        keep_index = []
+        i = 0
+        for index, row in df.iterrows() :
+            snv_pos = row['snv_pos']
+            
+            var_region = index[snv_pos-5:snv_pos+5+1]
+            ref_region = row['wt_seq'][snv_pos-5:snv_pos+5+1]
+            
+            pas_disturbed = False
+            for pas in pas_dict :
+                if pas in var_region and pas not in ref_region :
+                    pas_disturbed = True
+                    break
+                elif pas not in var_region and pas in ref_region :
+                    pas_disturbed = True
+                    break
+            
+            if not pas_disturbed :
+                keep_index.append(i)
+            
+            i += 1
+        
+        df = df.iloc[keep_index]
+    
+    border_eta = 0.00
+    
+    ax = plt.gca()
+    ax.add_patch(Rectangle((-50 + border_eta, -annotation_height + border_eta), 50 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=1.5))
+    ax.add_patch(Rectangle((0 + border_eta, -annotation_height + border_eta), 6 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='darkgreen', edgecolor='black', lw=1.5))
+    ax.add_patch(Rectangle((6 + border_eta, -annotation_height + border_eta), 54 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=1.5))
+    ax.add_patch(Rectangle((60 + border_eta, -annotation_height + border_eta), 75 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=1.5))
+
+    use_start = plot_start
+    use_end = 0
+    if use_end - use_start > 10 :
+        ax.text(use_start + (use_end - use_start) / 2., -annotation_height/2., 'USE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    dse_start = 6
+    dse_end = min(60, plot_end)
+    if dse_end - dse_start > 10 :
+        ax.text(dse_start + (dse_end - dse_start) / 2., -annotation_height/2., 'DSE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    #USE upregulatory
+    snv_coords = np.arange(50)
+    df_sel = df.query("snv_pos >= 0 and snv_pos <= 49 and delta_logodds_true > 0.0")
+    
+    ls = []
+    
+    for delta_thresh, delta_style in zip(delta_threshes, delta_linestyles) :
+        df_above = df_sel.query("delta_logodds_true > " + str(delta_thresh))
+        snv_count = len(df_above)
+        orig_count = len(df_orig.query("snv_pos >= 0 and snv_pos <= 49 and delta_logodds_true > 0.0"))
+        if count_vs_all :
+            orig_count = len(df_orig.query("delta_logodds_true > 0.0"))
+        frac = float(snv_count) / float(orig_count)
+        
+        l1 = None
+        if plot_frac :
+            #print('USE upregulatory, delta > ' + str(delta_thresh) + ', frac = ' + str(frac))
+            l1 = plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [frac, frac], color='black', linewidth=1.5, linestyle=delta_style, label='Fold Change > ' + str(round(np.exp(delta_thresh), 1)))
+        else :
+            #print('USE upregulatory, delta > ' + str(delta_thresh) + ', count = ' + str(snv_count))
+            l1 = plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [snv_count, snv_count], color='black', linewidth=1.5, linestyle=delta_style, label='Fold Change > ' + str(round(np.exp(delta_thresh), 1)))
+        
+        ls.append(l1[0])
+    
+    #USE downregulatory
+    snv_coords = np.arange(50)
+    df_sel = df.query("snv_pos >= 0 and snv_pos <= 49 and delta_logodds_true < 0.0").sort_values(by='delta_logodds_true', ascending=False)
+    
+    for delta_thresh, delta_style in zip(delta_threshes, delta_linestyles) :
+        df_above = df_sel.query("delta_logodds_true < -" + str(delta_thresh))
+        snv_count = len(df_above)
+        orig_count = len(df_orig.query("snv_pos >= 0 and snv_pos <= 49 and delta_logodds_true < 0.0"))
+        if count_vs_all :
+            orig_count = len(df_orig.query("delta_logodds_true < 0.0"))
+        frac = float(snv_count) / float(orig_count)
+        
+        if plot_frac :
+            #print('USE downregulatory, delta < ' + str(delta_thresh) + ', frac = ' + str(frac))
+            plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [-frac-annotation_height, -frac-annotation_height], color='black', linewidth=1.5, linestyle=delta_style)
+        else :
+            #print('USE downregulatory, delta < ' + str(delta_thresh) + ', count = ' + str(snv_count))
+            plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [-snv_count-annotation_height, -snv_count-annotation_height], color='black', linewidth=1.5, linestyle=delta_style)
+    
+    
+    #DSE upregulatory
+    snv_coords = np.arange(dse_end) + 56
+    df_sel = df.query("snv_pos >= 56 and snv_pos < " + str(snv_coords[-1]) + " and delta_logodds_true > 0.0")
+    
+    for delta_thresh, delta_style in zip(delta_threshes, delta_linestyles) :
+        df_above = df_sel.query("delta_logodds_true > " + str(delta_thresh))
+        snv_count = len(df_above)
+        orig_count = len(df_orig.query("snv_pos >= 56 and snv_pos < " + str(snv_coords[-1]) + " and delta_logodds_true > 0.0"))
+        if count_vs_all :
+            orig_count = len(df_orig.query("delta_logodds_true > 0.0"))
+        frac = float(snv_count) / float(orig_count)
+        
+        if plot_frac :
+            #print('DSE upregulatory, delta > ' + str(delta_thresh) + ', frac = ' + str(frac))
+            plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [frac, frac], color='black', linewidth=1.5, linestyle=delta_style)
+        else :
+            #print('DSE upregulatory, delta > ' + str(delta_thresh) + ', count = ' + str(snv_count))
+            plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [snv_count, snv_count], color='black', linewidth=1.5, linestyle=delta_style)
+    
+    #DSE downregulatory
+    snv_coords = np.arange(dse_end) + 56
+    df_sel = df.query("snv_pos >= 56 and snv_pos < " + str(snv_coords[-1]) + " and delta_logodds_true < 0.0")
+    
+    for delta_thresh, delta_style in zip(delta_threshes, delta_linestyles) :
+        df_above = df_sel.query("delta_logodds_true < -" + str(delta_thresh))
+        snv_count = len(df_above)
+        orig_count = len(df_orig.query("snv_pos >= 56 and snv_pos < " + str(snv_coords[-1]) + " and delta_logodds_true < 0.0"))
+        if count_vs_all :
+            orig_count = len(df_orig.query("delta_logodds_true < 0.0"))
+        frac = float(snv_count) / float(orig_count)
+        
+        if plot_frac :
+            #print('DSE downregulatory, delta < ' + str(delta_thresh) + ', frac = ' + str(frac))
+            plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [-frac-annotation_height, -frac-annotation_height], color='black', linewidth=1.5, linestyle=delta_style)
+        else :
+            #print('DSE downregulatory, delta < ' + str(delta_thresh) + ', count = ' + str(snv_count))
+            plt.plot([snv_coords[0] - 50, snv_coords[-1] - 50], [-snv_count-annotation_height, -snv_count-annotation_height], color='black', linewidth=1.5, linestyle=delta_style)
+    
+    if plot_start != -50 or plot_end != 100 :
+        plt.xticks([plot_start, 0, 6, plot_end], [plot_start, 0, 6, plot_end], fontsize=18)
+    else :
+        plt.xticks([-100, -50, -25, 0, 6, 25, 50, 100], [-100, -50, -25, 0, 6, 25, 50, 100], fontsize=18)
+    plt.yticks([-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3], [0.4, 0.3, 0.2, 0.1, 0.0, 0.0, 0.1, 0.2, 0.3], fontsize=16)
+    
+
+    plt.xlabel('Position relative to pPAS', fontsize=18)
+    plt.ylabel('Fraction of library', fontsize=18)
+    plt.title('Summary Delta Usage', fontsize=18)
+
+    plt.xlim(plot_start, dse_end)
+    
+    plt.legend(handles=ls, fontsize=12, loc='upper left')
+    
+    plt.tight_layout()
+    
+    if fig_name is not None :
+        plt.savefig(fig_name + '.png', dpi=fig_dpi, transparent=True)
+        plt.savefig(fig_name + '.svg')
+        plt.savefig(fig_name + '.eps')
+    plt.show()
+
+def plot_perc_positions(df, no_denovo=False, significance_level=1.0, percentiles=[], percentile_colors=[], figsize=(8,6), fig_name=None, plot_start=-50, plot_end=100, fig_dpi=300, pred_column='delta_logodds_pred', true_column='delta_logodds_true', snv_pos_column='snv_pos') :
+    fig = plt.figure(figsize=figsize)
+    
+    df = df.query("delta_p_val < " + str(significance_level))
+    
+    df = df.query("variant != 'indel'")
+    
+    if no_denovo :
+        pas_dict = {
+            'AATAAA' : True,
+            'ATTAAA' : True,
+            'TATAAA' : True,
+            'GATAAA' : True,
+            'CATAAA' : True,
+            'AGTAAA' : True,
+            'ACTAAA' : True,
+        }
+        
+        keep_index = []
+        i = 0
+        for index, row in df.iterrows() :
+            snv_pos = row['snv_pos']
+            
+            var_region = index[snv_pos-5:snv_pos+5+1]
+            ref_region = row['wt_seq'][snv_pos-5:snv_pos+5+1]
+            
+            pas_disturbed = False
+            for pas in pas_dict :
+                if pas in var_region and pas not in ref_region :
+                    pas_disturbed = True
+                    break
+                elif pas not in var_region and pas in ref_region :
+                    pas_disturbed = True
+                    break
+            
+            if not pas_disturbed :
+                keep_index.append(i)
+            
+            i += 1
+        
+        df = df.iloc[keep_index]
+    
+    annotation_height = 1.0
+    border_eta = 0.00
+    
+    ax = plt.gca()
+    ax.add_patch(Rectangle((-50 + border_eta, -annotation_height + border_eta), 50 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=1.5))
+    ax.add_patch(Rectangle((0 + border_eta, -annotation_height + border_eta), 6 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='darkgreen', edgecolor='black', lw=1.5))
+    ax.add_patch(Rectangle((6 + border_eta, -annotation_height + border_eta), 54 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=1.5))
+    ax.add_patch(Rectangle((60 + border_eta, -annotation_height + border_eta), 75 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=1.5))
+
+    use_start = plot_start
+    use_end = 0
+    if use_end - use_start > 10 :
+        ax.text(use_start + (use_end - use_start) / 2., -annotation_height/2., 'USE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    dse_start = 6
+    dse_end = min(60, plot_end)
+    if dse_end - dse_start > 10 :
+        ax.text(dse_start + (dse_end - dse_start) / 2., -annotation_height/2., 'DSE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    ls = []
+    
+    #USE upregulatory
+    snv_coords = np.arange(50)
+    df_sel = df.query("snv_pos >= 0 and snv_pos <= 49 and delta_logodds_true > 0.0").sort_values(by='delta_logodds_true')
+    
+    for percentile, percentile_color in zip(percentiles, percentile_colors) :
+        snv_means = np.zeros(snv_coords.shape[0])
+        snv_counts = np.zeros(snv_coords.shape[0])
+        
+        unique_snv_pos = df_sel['snv_pos'].unique()
+        for snv_pos in unique_snv_pos :
+            df_snv_pos = df_sel.query("snv_pos == " + str(snv_pos))
+            df_perc = df_snv_pos.sort_values(by='delta_logodds_true').iloc[int(percentile * len(df_snv_pos)):]
+            
+            snv_means[snv_coords == snv_pos] = np.min(np.ravel(df_perc['delta_logodds_true'].values))
+            snv_counts[snv_coords == snv_pos] = len(df_perc)
+        
+        l1 = plt.plot(snv_coords - 50, snv_means, color=percentile_color, linewidth=1.5, label='Percentile >= ' + str(int(percentile * 100)) + '%')
+        ls.append(l1[0])
+    
+    #USE downregulatory
+    snv_coords = np.arange(50)
+    df_sel = df.query("snv_pos >= 0 and snv_pos <= 49 and delta_logodds_true < 0.0").sort_values(by='delta_logodds_true', ascending=False)
+    
+    for percentile, percentile_color in zip(percentiles, percentile_colors) :
+        snv_means = np.zeros(snv_coords.shape[0])
+        snv_counts = np.zeros(snv_coords.shape[0])
+        
+        unique_snv_pos = df_sel['snv_pos'].unique()
+        for snv_pos in unique_snv_pos :
+            df_snv_pos = df_sel.query("snv_pos == " + str(snv_pos))
+            df_perc = df_snv_pos.sort_values(by='delta_logodds_true', ascending=False).iloc[int(percentile * len(df_snv_pos)):]
+            
+            snv_means[snv_coords == snv_pos] = np.max(np.ravel(df_perc['delta_logodds_true'].values))
+            snv_counts[snv_coords == snv_pos] = len(df_perc)
+        
+        plt.plot(snv_coords - 50, snv_means - 1, color=percentile_color, linewidth=1.5)
+    
+    
+    #DSE upregulatory
+    snv_coords = np.arange(dse_end) + 56
+    df_sel = df.query("snv_pos >= 56 and snv_pos < " + str(snv_coords[-1]) + " and delta_logodds_true > 0.0")
+    
+    for percentile, percentile_color in zip(percentiles, percentile_colors) :
+        snv_means = np.zeros(snv_coords.shape[0])
+        snv_counts = np.zeros(snv_coords.shape[0])
+        
+        unique_snv_pos = df_sel['snv_pos'].unique()
+        for snv_pos in unique_snv_pos :
+            df_snv_pos = df_sel.query("snv_pos == " + str(snv_pos))
+            df_perc = df_snv_pos.sort_values(by='delta_logodds_true').iloc[int(percentile * len(df_snv_pos)):]
+            
+            snv_means[snv_coords == snv_pos] = np.min(np.ravel(df_perc['delta_logodds_true'].values))
+            snv_counts[snv_coords == snv_pos] = len(df_perc)
+        
+        plt.plot(snv_coords - 50, snv_means, color=percentile_color, linewidth=1.5)
+    
+    #DSE downregulatory
+    snv_coords = np.arange(dse_end) + 56
+    df_sel = df.query("snv_pos >= 56 and snv_pos < " + str(snv_coords[-1]) + " and delta_logodds_true < 0.0")
+    
+    for percentile, percentile_color in zip(percentiles, percentile_colors) :
+        snv_means = np.zeros(snv_coords.shape[0])
+        snv_counts = np.zeros(snv_coords.shape[0])
+        
+        unique_snv_pos = df_sel['snv_pos'].unique()
+        for snv_pos in unique_snv_pos :
+            df_snv_pos = df_sel.query("snv_pos == " + str(snv_pos))
+            df_perc = df_snv_pos.sort_values(by='delta_logodds_true', ascending=False).iloc[int(percentile * len(df_snv_pos)):]
+            
+            snv_means[snv_coords == snv_pos] = np.max(np.ravel(df_perc['delta_logodds_true'].values))
+            snv_counts[snv_coords == snv_pos] = len(df_perc)
+        
+        plt.plot(snv_coords - 50, snv_means - 1, color=percentile_color, linewidth=1.5)
+    
+    if plot_start != -50 or plot_end != 100 :
+        plt.xticks([plot_start, 0, 6, plot_end], [plot_start, 0, 6, plot_end], fontsize=18)
+    else :
+        plt.xticks([-100, -50, -25, 0, 6, 25, 50, 100], [-100, -50, -25, 0, 6, 25, 50, 100], fontsize=18)
+    plt.yticks([-3, -1, 0, 2], [-2, 0, 0, 2], fontsize=18)
+    
+    #plt.axis([np.min(snv_pos), np.max(snv_pos), np.min((delta_logodds_true)), np.max((delta_logodds_true))])
+    plt.axis([-50, 100, -6., 4.])
+
+    plt.xlabel('Position relative to pPAS', fontsize=18)
+    plt.ylabel('Observed Delta pPAS logodds', fontsize=18)
+    plt.title('Summary Delta Usage', fontsize=18)
+
+    plt.xlim(plot_start, dse_end)#plot_end)
+    plt.ylim(-3, 2)
+    
+    plt.legend(handles=ls, fontsize=12, loc='upper left')
+    
+    plt.tight_layout()
+    
+    if fig_name is not None :
+        plt.savefig(fig_name + '.png', dpi=fig_dpi, transparent=True)
+        plt.savefig(fig_name + '.svg')
+        plt.savefig(fig_name + '.eps')
+    plt.show()
+
+
+def plot_individual_tgta_map(wt_seq, tgta_1_df, tgta_2_df, plot_start=None, plot_end=None, vmin=-1, vmax=1, interpolate_missing=False, plot_symmetric_doubles=True) :
+    
+    wt_seq_len = len(tgta_1_df['wt_seq'].values[0])
+    
+    tgta_1_seq_df = tgta_1_df
+    tgta_2_seq_df = tgta_2_df
+    if wt_seq != 'mean' :
+        tgta_1_seq_df = tgta_1_df.query("wt_seq == '" + wt_seq + "'")
+        tgta_2_seq_df = tgta_2_df.query("wt_seq == '" + wt_seq + "'")
+
+    min_pos = 1000
+    max_pos = 0
+
+    min_pos_1 = 1000
+    max_pos_1 = 0
+    min_pos_2 = 1000
+    max_pos_2 = 0
+
+    delta_vec = np.zeros((1, wt_seq_len))
+    delta_mat = np.zeros((wt_seq_len, wt_seq_len))
+    
+    count_vec = np.zeros((1, wt_seq_len))
+    count_mat = np.zeros((wt_seq_len, wt_seq_len))
+
+    unmapped_pos = {}
+    for i in range(0, delta_vec.shape[1]) :
+        unmapped_pos[i] = True
+
+    unmapped_double_pos = {}
+    for i in range(0, delta_vec.shape[1]) :
+        j_end = delta_vec.shape[1]
+        if not plot_symmetric_doubles :
+            j_end = i
+        for j in range(0, j_end) :
+            unmapped_double_pos[str(i) + '_' + str(j)] = True
+
+
+    for index, row in tgta_1_seq_df.iterrows() :
+        pos = row['tgta_pos_1']
+        if pos < min_pos :
+            min_pos = pos
+        if pos > max_pos :
+            max_pos = pos
+
+        delta_logodds_true = row['delta_logodds_true']
+
+        delta_vec[0, pos] += delta_logodds_true
+        count_vec[0, pos] += 1.
+
+        unmapped_pos[pos] = False
+
+    delta_vec[count_vec > 0] = delta_vec[count_vec > 0] / count_vec[count_vec > 0]
+
+    if interpolate_missing :
+        for pos in unmapped_pos :
+            if unmapped_pos[pos] == True and pos > min_pos and pos < max_pos :
+                delta_vec[0, pos] = (delta_vec[0, pos-1] + delta_vec[0, pos+1]) / 2.
+
+
+
+    #Plot overlayed sequence
+    fig = None
+    
+    if wt_seq != 'mean' :
+        fig = plt.figure(figsize=(12, 1.5)) 
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 2])
+
+        ax0 = plt.subplot(gs[0])
+        ax1 = plt.subplot(gs[1])
+        ax = [ax0, ax1]
+
+        for j in range(min_pos, max_pos) :
+            letterAt(wt_seq[j], j + 0.5, 0, 1, ax[0])
+
+        plt.sca(ax[0])
+
+        if plot_start is not None and plot_end is not None :
+            plt.xlim((plot_start, plot_end))
+        else :
+            plt.xlim((min_pos, max_pos))
+        plt.ylim((0, 1))
+        plt.xticks([], [])
+        plt.yticks([], [])
+        plt.axis('off')
+    else :
+        fig = plt.figure(figsize=(12, 1))
+        ax = [None, plt.gca()]
+
+
+
+    ax[1].pcolor(delta_vec, cmap='bwr', vmin=vmin, vmax=vmax)
+
+    if not interpolate_missing :
+        for pos in unmapped_pos :
+            if unmapped_pos[pos] == True and pos >= min_pos and pos <= max_pos :
+                ax[1].plot([pos, pos+1], [0, 1], color='black', alpha=0.5, linewidth=2, linestyle='--')
+                ax[1].plot([pos+1, pos], [0, 1], color='black', alpha=0.5, linewidth=2, linestyle='--')
+
+    plt.sca(ax[1])
+
+    if plot_start is not None and plot_end is not None :
+        plt.xticks(np.array([plot_start, 50, 56, plot_end - 1]) + 0.5, [plot_start - 50, 0, 6, plot_end - 1 - 50], fontsize=18)
+        plt.xlim((plot_start, plot_end))
+    else :
+        plt.xticks(np.array([min_pos, 50, 56, max_pos - 1]) + 0.5, [min_pos - 50, 0, 6, max_pos - 1 - 50], fontsize=18)
+        plt.xlim((min_pos, max_pos))
+    
+    plt.yticks([], [])
+
+    #plt.tight_layout()
+    plt.show()
+
+    #Scatter of observed vs. predicted logodds
+
+    r_val, _ = pearsonr(tgta_1_seq_df['delta_logodds_pred'], tgta_1_seq_df['delta_logodds_true'])
+
+    f = plt.figure(figsize=(4, 4))
+
+    plt.scatter(tgta_1_seq_df['delta_logodds_pred'], tgta_1_seq_df['delta_logodds_true'], alpha=0.5, s=4, c='black')
+
+    annot_text = 'R^2 = ' + str(round(r_val * r_val, 2))
+    annot_text += '\nn = ' + str(len(tgta_1_seq_df))
+    ax = plt.gca()
+    ax.text(0.05, 0.95, annot_text, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, color='black', fontsize=16, weight="bold")
+
+
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+
+    plt.xlabel('Predicted Delta pPAS Logodds', fontsize=16)
+    plt.ylabel('Observed Delta pPAS Logodds', fontsize=16)
+    plt.title('Single TGTA', fontsize=18)
+
+    plt.tight_layout()
+    plt.show()
+
+
+    if len(tgta_2_seq_df) == 0 :
+        return
+
+    for index, row in tgta_2_seq_df.iterrows() :
+        pos1 = row['tgta_pos_1']
+        pos2 = row['tgta_pos_2']
+        delta_logodds_true = row['delta_logodds_true']
+
+        delta_mat[pos1, pos2] += delta_logodds_true
+        count_mat[pos1, pos2] += 1.
+
+        if plot_symmetric_doubles :
+            delta_mat[pos2, pos1] += delta_logodds_true
+            count_mat[pos2, pos1] += 1.
+
+        if pos1 < min_pos_1 :
+            min_pos_1 = pos1
+        if pos1 > max_pos_1 :
+            max_pos_1 = pos1
+        if pos2 < min_pos_2 :
+            min_pos_2 = pos2
+        if pos2 > max_pos_2 :
+            max_pos_2 = pos2
+
+        unmapped_double_pos[str(pos1) + '_' + str(pos2)] = False
+        unmapped_double_pos[str(pos2) + '_' + str(pos1)] = False
+
+    delta_mat[count_mat > 0] = delta_mat[count_mat > 0] / count_mat[count_mat > 0]
+    
+    if interpolate_missing :
+        for pos in unmapped_pos :
+            if unmapped_pos[pos] == True and pos > min_pos and pos < max_pos :
+                delta_vec[0, pos] = (delta_vec[0, pos-1] + delta_vec[0, pos+1]) / 2.
+
+        for pos_str in unmapped_double_pos :
+            pos1, pos2 = [int(str_part) for str_part in pos_str.split('_')]
+
+            if unmapped_double_pos[pos_str] == True and (pos1 > min_pos_1 and pos1 < max_pos_1) and (pos2 > min_pos_2 and pos2 < max_pos_2) :
+                delta_mat[pos1, pos2] = delta_mat[pos1-1, pos2-1] + delta_mat[pos1-1, pos2] + delta_mat[pos1-1, pos2+1]
+                delta_mat[pos1, pos2] += delta_mat[pos1, pos2-1] + delta_mat[pos1, pos2+1]
+                delta_mat[pos1, pos2] += delta_mat[pos1+1, pos2-1] + delta_mat[pos1+1, pos2] + delta_mat[pos1+1, pos2+1]
+
+                delta_mat[pos1, pos2] /= 8.
+
+
+    fig = None
+    
+    if wt_seq != 'mean' :
+        fig = plt.figure(figsize=(8, 8.5)) 
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 16])
+
+        ax0 = plt.subplot(gs[0])
+        ax1 = plt.subplot(gs[1])
+        ax = [ax0, ax1]
+
+        for j in range(min_pos_1, max_pos_1) :
+            letterAt(wt_seq[j], j + 0.5, 0, 1, ax[0])
+
+        plt.sca(ax[0])
+
+        if plot_start is not None and plot_end is not None :
+            plt.xlim((plot_start, plot_end))
+        else :
+            plt.xlim((min_pos_1, max_pos_1))
+        plt.ylim((0, 1))
+        plt.xticks([], [])
+        plt.yticks([], [])
+        plt.axis('off')
+    else :
+        fig = plt.figure(figsize=(8, 8))
+        ax = [None, plt.gca()]
+
+    ax[1].pcolor(delta_mat, cmap='bwr', vmin=vmin, vmax=vmax)
+
+    if not interpolate_missing :
+        for pos_str in unmapped_double_pos :
+            pos1, pos2 = [int(str_part) for str_part in pos_str.split('_')]
+
+            if unmapped_double_pos[pos_str] == True and (pos1 >= min_pos_1 and pos1 <= max_pos_1) and (pos2 >= min_pos_2 and pos2 <= max_pos_2) :
+                ax[1].plot([pos1, pos1+1], [pos2, pos2+1], color='black', alpha=0.5, linewidth=2)
+                ax[1].plot([pos1, pos1+1], [pos2+1, pos2], color='black', alpha=0.5, linewidth=2)
+
+    plt.sca(ax[1])
+
+    if plot_start is not None and plot_end is not None :
+        plt.xticks(np.array([plot_start, 50, 56, plot_end-1]) + 0.5, [plot_start - 50, 0, 6, plot_end-1 - 50], fontsize=18)
+        plt.xlim((plot_start, plot_end))
+    else :
+        plt.xticks(np.array([min_pos_1, 50, 56, max_pos_1-1]) + 0.5, np.array([min_pos_1, 50, 56, max_pos_1-1]) - 50, fontsize=18)
+        plt.xlim((min_pos_1, max_pos_1))
+    
+    plt.yticks(np.array([min_pos_2, 50, 56, max_pos_2-1]) + 0.5, np.array([min_pos_2, 50, 56, max_pos_2-1]) - 50, fontsize=18)
+    plt.ylim((min_pos_2, max_pos_2))
+
+    plt.tight_layout()
+    plt.show()
+
+    #Scatter of observed vs. predicted logodds
+
+    r_val, _ = pearsonr(tgta_2_seq_df['delta_logodds_pred'], tgta_2_seq_df['delta_logodds_true'])
+
+    f = plt.figure(figsize=(4, 4))
+
+    plt.scatter(tgta_2_seq_df['delta_logodds_pred'], tgta_2_seq_df['delta_logodds_true'], alpha=0.5, s=4, c='black')
+
+    annot_text = 'R^2 = ' + str(round(r_val * r_val, 2))
+    annot_text += '\nn = ' + str(len(tgta_2_seq_df))
+    ax = plt.gca()
+    ax.text(0.05, 0.95, annot_text, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, color='black', fontsize=16, weight="bold")
+
+
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+
+    plt.xlabel('Predicted Delta pPAS Logodds', fontsize=16)
+    plt.ylabel('Observed Delta pPAS Logodds', fontsize=16)
+    plt.title('Double TGTA', fontsize=18)
+
+    plt.tight_layout()
+    plt.show()
+    
+def plot_individual_tgta_map_nonlin(wt_seq, tgta_1_df, tgta_2_df, plot_start=None, plot_end=None, vmin=-1, vmax=1, interpolate_missing=False, plot_symmetric_doubles=True) :
+    
+    wt_seq_len = len(tgta_1_df['wt_seq'].values[0])
+    
+    tgta_1_seq_df = tgta_1_df
+    tgta_2_seq_df = tgta_2_df
+    if wt_seq != 'mean' :
+        tgta_1_seq_df = tgta_1_df.query("wt_seq == '" + wt_seq + "'")
+        tgta_2_seq_df = tgta_2_df.query("wt_seq == '" + wt_seq + "'")
+    
+    if len(tgta_2_seq_df) == 0 :
+        return
+
+    min_pos = 1000
+    max_pos = 0
+
+    min_pos_1 = 1000
+    max_pos_1 = 0
+    min_pos_2 = 1000
+    max_pos_2 = 0
+
+    delta_vec = np.zeros((1, wt_seq_len))
+    delta_mat = np.zeros((wt_seq_len, wt_seq_len))
+    
+    count_vec = np.zeros((1, wt_seq_len))
+    count_mat = np.zeros((wt_seq_len, wt_seq_len))
+
+    unmapped_pos = {}
+    for i in range(0, delta_vec.shape[1]) :
+        unmapped_pos[i] = True
+
+    unmapped_double_pos = {}
+    for i in range(0, delta_vec.shape[1]) :
+        j_end = delta_vec.shape[1]
+        if not plot_symmetric_doubles :
+            j_end = i
+        for j in range(0, j_end) :
+            unmapped_double_pos[str(i) + '_' + str(j)] = True
+
+
+    for index, row in tgta_1_seq_df.iterrows() :
+        pos = row['tgta_pos_1']
+        if pos < min_pos :
+            min_pos = pos
+        if pos > max_pos :
+            max_pos = pos
+
+        delta_logodds_true = row['delta_logodds_true']
+
+        delta_vec[0, pos] += delta_logodds_true
+        count_vec[0, pos] += 1.
+
+        unmapped_pos[pos] = False
+
+    delta_vec[count_vec > 0] = delta_vec[count_vec > 0] / count_vec[count_vec > 0]
+
+    if interpolate_missing :
+        for pos in unmapped_pos :
+            if unmapped_pos[pos] == True and pos > min_pos and pos < max_pos :
+                delta_vec[0, pos] = (delta_vec[0, pos-1] + delta_vec[0, pos+1]) / 2.
+
+    for index, row in tgta_2_seq_df.iterrows() :
+        pos1 = row['tgta_pos_1']
+        pos2 = row['tgta_pos_2']
+        delta_logodds_true = row['delta_logodds_true']
+        
+        
+        seq_var = index
+        
+        seq_ref_tgta1 = wt_seq[:pos1] + 'TGTA' + wt_seq[pos1+4:]
+        seq_ref_tgta2 = wt_seq[:pos2] + 'TGTA' + wt_seq[pos2+4:]
+        
+        delta_logodds_true_tgta1 = tgta_1_seq_df.loc[seq_ref_tgta1]['delta_logodds_true']
+        delta_logodds_true_tgta2 = tgta_1_seq_df.loc[seq_ref_tgta2]['delta_logodds_true']
+        
+
+        delta_mat[pos1, pos2] += (delta_logodds_true - (delta_logodds_true_tgta1 + delta_logodds_true_tgta2))
+        count_mat[pos1, pos2] += 1.
+
+        if plot_symmetric_doubles :
+            delta_mat[pos2, pos1] += (delta_logodds_true - (delta_logodds_true_tgta1 + delta_logodds_true_tgta2))
+            count_mat[pos2, pos1] += 1.
+
+        if pos1 < min_pos_1 :
+            min_pos_1 = pos1
+        if pos1 > max_pos_1 :
+            max_pos_1 = pos1
+        if pos2 < min_pos_2 :
+            min_pos_2 = pos2
+        if pos2 > max_pos_2 :
+            max_pos_2 = pos2
+
+        unmapped_double_pos[str(pos1) + '_' + str(pos2)] = False
+        unmapped_double_pos[str(pos2) + '_' + str(pos1)] = False
+
+    delta_mat[count_mat > 0] = delta_mat[count_mat > 0] / count_mat[count_mat > 0]
+    
+    if interpolate_missing :
+        for pos in unmapped_pos :
+            if unmapped_pos[pos] == True and pos > min_pos and pos < max_pos :
+                delta_vec[0, pos] = (delta_vec[0, pos-1] + delta_vec[0, pos+1]) / 2.
+
+        for pos_str in unmapped_double_pos :
+            pos1, pos2 = [int(str_part) for str_part in pos_str.split('_')]
+
+            if unmapped_double_pos[pos_str] == True and (pos1 > min_pos_1 and pos1 < max_pos_1) and (pos2 > min_pos_2 and pos2 < max_pos_2) :
+                delta_mat[pos1, pos2] = delta_mat[pos1-1, pos2-1] + delta_mat[pos1-1, pos2] + delta_mat[pos1-1, pos2+1]
+                delta_mat[pos1, pos2] += delta_mat[pos1, pos2-1] + delta_mat[pos1, pos2+1]
+                delta_mat[pos1, pos2] += delta_mat[pos1+1, pos2-1] + delta_mat[pos1+1, pos2] + delta_mat[pos1+1, pos2+1]
+
+                delta_mat[pos1, pos2] /= 8.
+
+
+    fig = None
+    
+    if wt_seq != 'mean' :
+        fig = plt.figure(figsize=(8, 8.5)) 
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 16])
+
+        ax0 = plt.subplot(gs[0])
+        ax1 = plt.subplot(gs[1])
+        ax = [ax0, ax1]
+
+        for j in range(min_pos_1, max_pos_1) :
+            letterAt(wt_seq[j], j + 0.5, 0, 1, ax[0])
+
+        plt.sca(ax[0])
+
+        if plot_start is not None and plot_end is not None :
+            plt.xlim((plot_start, plot_end))
+        else :
+            plt.xlim((min_pos_1, max_pos_1))
+        plt.ylim((0, 1))
+        plt.xticks([], [])
+        plt.yticks([], [])
+        plt.axis('off')
+    else :
+        fig = plt.figure(figsize=(8, 8))
+        ax = [None, plt.gca()]
+
+    ax[1].pcolor(delta_mat, cmap='bwr', vmin=vmin, vmax=vmax)
+
+    if not interpolate_missing :
+        for pos_str in unmapped_double_pos :
+            pos1, pos2 = [int(str_part) for str_part in pos_str.split('_')]
+
+            if unmapped_double_pos[pos_str] == True and (pos1 >= min_pos_1 and pos1 <= max_pos_1) and (pos2 >= min_pos_2 and pos2 <= max_pos_2) :
+                ax[1].plot([pos1, pos1+1], [pos2, pos2+1], color='black', alpha=0.5, linewidth=2)
+                ax[1].plot([pos1, pos1+1], [pos2+1, pos2], color='black', alpha=0.5, linewidth=2)
+
+    plt.sca(ax[1])
+
+    if plot_start is not None and plot_end is not None :
+        plt.xticks(np.array([plot_start, 50, 56, plot_end-1]) + 0.5, [plot_start - 50, 0, 6, plot_end-1 - 50], fontsize=18)
+        plt.xlim((plot_start, plot_end))
+    else :
+        plt.xticks(np.array([min_pos_1, 50, 56, max_pos_1-1]) + 0.5, np.array([min_pos_1, 50, 56, max_pos_1-1]) - 50, fontsize=18)
+        plt.xlim((min_pos_1, max_pos_1))
+    
+    plt.yticks(np.array([min_pos_2, 50, 56, max_pos_2-1]) + 0.5, np.array([min_pos_2, 50, 56, max_pos_2-1]) - 50, fontsize=18)
+    plt.ylim((min_pos_2, max_pos_2))
+
+    plt.tight_layout()
     plt.show()
 
