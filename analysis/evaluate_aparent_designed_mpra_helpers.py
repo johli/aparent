@@ -1989,3 +1989,652 @@ def struct_map_fold_snvs(df_gene, gene_name, experiment, mode, figsize=(12, 3), 
         plt.savefig(fig_name + '.eps')
     plt.show()
 
+#SNV Analysis Helper Functions
+
+def plot_position_delta_scatter(df, min_pred_filter=0.0, sort_pred=True, figsize=(14,6), dot_size=12, dot_alpha=0.5, vmin=-0.5, vmax=0.45, show_stats=True, fig_name=None, plot_start=-50, plot_end=100, fig_dpi=300, annotate=None, bg_df=None, pred_column='delta_logodds_pred', true_column='delta_logodds_true', snv_pos_column='snv_pos') :
+    fig = plt.figure(figsize=figsize)
+
+    keep_index = np.abs(np.ravel(df[pred_column].values)) >= min_pred_filter
+    df = df.loc[keep_index]
+    
+    df_indel = df.query("variant == 'indel'")
+    df = df.query("variant != 'indel'")
+    
+    annotation_height = 1.0
+    if 'psi' in true_column :
+        annotation_height = 0.15
+    
+    border_eta = 0.00
+    
+    if bg_df is not None :
+        snv_pos = np.ravel(bg_df[snv_pos_column].values) - 50
+        delta_logodds_true = np.ravel(bg_df[true_column].values)
+        delta_logodds_pred = np.ravel(bg_df[pred_column].values)
+
+        sort_index = np.argsort(np.abs(delta_logodds_pred))
+        snv_pos = snv_pos[sort_index]
+        delta_logodds_true = delta_logodds_true[sort_index]
+        delta_logodds_pred = delta_logodds_pred[sort_index]
+        
+        delta_logodds_true[delta_logodds_true < 0.0] -= annotation_height
+
+        plt.scatter(snv_pos, delta_logodds_true, c=delta_logodds_pred, cmap="bwr", vmin=-0.5, vmax=0.45, alpha=0.01, s=12)
+    
+    snv_pos = np.ravel(df[snv_pos_column].values) - 50
+    delta_logodds_true = np.ravel(df[true_column].values)
+    delta_logodds_pred = np.ravel(df[pred_column].values)
+    
+    r_val, p_val = pearsonr(delta_logodds_true, delta_logodds_pred)
+    n_points = len(df)
+
+    if sort_pred :
+        sort_index = np.argsort(np.abs(delta_logodds_pred))
+        snv_pos = snv_pos[sort_index]
+        delta_logodds_true = delta_logodds_true[sort_index]
+        delta_logodds_pred = delta_logodds_pred[sort_index]
+
+    delta_logodds_true[delta_logodds_true < 0.0] -= annotation_height
+    ax = plt.gca()
+    ax.add_patch(Rectangle((-50 + border_eta, -annotation_height + border_eta), 50 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=4))
+    ax.add_patch(Rectangle((0 + border_eta, -annotation_height + border_eta), 6 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='darkgreen', edgecolor='black', lw=4))
+    ax.add_patch(Rectangle((6 + border_eta, -annotation_height + border_eta), 54 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=4))
+    ax.add_patch(Rectangle((60 + border_eta, -annotation_height + border_eta), 75 - 2.*border_eta, annotation_height - 2.*border_eta, fill=True, facecolor='white', edgecolor='black', lw=4))
+
+    #ax.text(-25, -annotation_height/2., 'USE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    #ax.text(33, -annotation_height/2., 'DSE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    #ax.text(85, -annotation_height/2., 'FDSE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    use_start = plot_start
+    use_end = 0
+    if use_end - use_start > 10 :
+        ax.text(use_start + (use_end - use_start) / 2., -annotation_height/2., 'USE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    dse_start = 6
+    dse_end = min(60, plot_end)
+    if dse_end - dse_start > 10 :
+        ax.text(dse_start + (dse_end - dse_start) / 2., -annotation_height/2., 'DSE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+    
+    fdse_start = 60
+    fdse_end = min(60 + 75, plot_end)
+    if fdse_end - fdse_start > 10 :
+        ax.text(fdse_start + (fdse_end - fdse_start) / 2., -annotation_height/2., 'FDSE', horizontalalignment='center', verticalalignment='center', color='black', fontsize=16, weight="bold")
+
+    
+    plt.scatter(snv_pos, delta_logodds_true, c=delta_logodds_pred, cmap="bwr", vmin=vmin, vmax=vmax, alpha=dot_alpha, s=dot_size)
+    #plt.plot([np.min(snv_pos), np.max(snv_pos)], [0, 0], c='darkred', linewidth=2, linestyle='--')
+
+    #Plot any indels
+    if len(df_indel) > 0 and True == False :
+        snv_pos_indel = np.ravel(df_indel[snv_pos_column].values) - 50
+        delta_logodds_true_indel = np.ravel(df_indel[true_column].values)
+        delta_logodds_pred_indel = np.ravel(df_indel[pred_column].values)
+        
+        plt.scatter(snv_pos_indel, delta_logodds_true_indel, c="black", marker="D", vmin=vmin, vmax=vmax, alpha=dot_alpha, s=dot_size)
+    
+    
+    if annotate is not None :
+        annotate_right_list = annotate['annotate_right_list']
+        annotate_right_down_list = annotate['annotate_right_down_list']
+        annotate_left_list = annotate['annotate_left_list']
+        annotate_left_down_list = annotate['annotate_left_down_list']
+        
+        annotate_once = {}
+        for index, row in df.iterrows() :
+
+            if row['gene'] in annotate_once :
+                continue
+
+            annotate_once[row['gene']] = True
+            
+            d_logodds_true = row[true_column]
+            if d_logodds_true < 0.0 :
+                d_logodds_true -= annotation_height
+
+            if row['gene'] in annotate_right_list :
+                plt.annotate(row['gene'],
+                        xy=(row['snv_pos'] - 50, d_logodds_true), xycoords='data',
+                        xytext=(30, 30), textcoords='offset points', fontsize=16,
+                        arrowprops=dict(arrowstyle="-", color='black', lw=2))
+            elif row['gene'] in annotate_right_down_list :
+                plt.annotate(row['gene'],
+                        xy=(row['snv_pos'] - 50, d_logodds_true), xycoords='data',
+                        xytext=(30, -30), textcoords='offset points', fontsize=16,
+                        arrowprops=dict(arrowstyle="-", color='black', lw=2))
+            elif row['gene'] in annotate_left_list :
+                plt.annotate(row['gene'],
+                        xy=(row['snv_pos'] - 50, d_logodds_true), xycoords='data',
+                        xytext=(-80, 30), textcoords='offset points', fontsize=16,
+                        arrowprops=dict(arrowstyle="-", color='black', lw=2))
+            elif row['gene'] in annotate_left_down_list :
+                plt.annotate(row['gene'],
+                        xy=(row['snv_pos'] - 50, d_logodds_true), xycoords='data',
+                        xytext=(-80, -30), textcoords='offset points', fontsize=16,
+                        arrowprops=dict(arrowstyle="-", color='black', lw=2))
+    
+    
+    annot_text = 'R^2 = ' + str(round(r_val * r_val, 2))
+    annot_text += '\nn = ' + str(n_points)
+    
+    if show_stats :
+        ax = plt.gca()
+        ax.text(0.90, 0.80, annot_text, horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes, color='black', fontsize=16, weight="bold")
+
+    if plot_start != -50 or plot_end != 100 :
+        plt.xticks([plot_start, 0, 6, plot_end], [plot_start, 0, 6, plot_end], fontsize=18)
+    else :
+        plt.xticks([-100, -50, -25, 0, 6, 25, 50, 100], [-100, -50, -25, 0, 6, 25, 50, 100], fontsize=18)
+    
+    if not 'psi' in true_column :
+        plt.yticks([-7, -5, -3, -1, 0, 2, 4], [-6, -4, -2, 0, 0, 2, 4], fontsize=18)
+    else :
+        plt.yticks([-1.0 - annotation_height, -0.5 - annotation_height, 0 - annotation_height, 0, 0.5, 1.0], [-1.0, -0.5, 0, 0, 0.5, 1.0], fontsize=18)
+    
+    #plt.axis([np.min(snv_pos), np.max(snv_pos), np.min((delta_logodds_true)), np.max((delta_logodds_true))])
+    plt.axis([-50, 100, -6., 4.])
+
+    plt.xlabel('Position relative to pPAS', fontsize=18)
+    plt.ylabel('Observed Delta pPAS logodds', fontsize=18)
+    plt.title('Position vs. Delta Usage', fontsize=18)
+
+    plt.xlim(plot_start, plot_end)
+    if not 'psi' in true_column :
+        plt.ylim(-7, 4)
+    else :
+        plt.ylim(-1 - annotation_height, 1)
+    
+    plt.tight_layout()
+    
+    if fig_name is not None :
+        plt.savefig(fig_name + '.png', dpi=fig_dpi, transparent=True)
+        plt.savefig(fig_name + '.eps')
+    plt.show()
+
+def mut_map_v2(df, gene_name, experiment, mode, true_column='delta_logodds_true', pred_column='delta_logodds_pred', figsize=(12, 3), mark_pathogenic=False, mark_benign=False, mark_undetermined=False, border_eta=0.085, seq_trim_start=0, seq_trim_end=164, plot_start=0, plot_end=164, pas_downscaling=0.5, pas_downscale_mode='frac', fig_name=None, fig_dpi=300) :
+
+    mut_map = np.zeros((4, 164))
+    mut_map_pred = np.zeros((4, 164))
+
+    df_gene = None
+    if experiment is not None :
+        df_gene = df.query("gene == '" + gene_name + "' and experiment == '" + experiment + "'")
+    else :
+        df_gene = df.query("gene == '" + gene_name + "'")
+    
+    ref_seq = df_gene['wt_seq'].values[0]
+
+    for index, row in df_gene.iterrows() :
+        snv_pos = row['snv_pos']
+        
+        if row['wt_seq'] != ref_seq :
+            continue
+
+        delta_logodds_true = row['delta_logodds_true']
+        delta_logodds_pred = row['delta_logodds_pred']
+        if np.isnan(delta_logodds_true) :
+            delta_logodds_true = 0
+        if np.isnan(delta_logodds_pred) :
+            delta_logodds_pred = 0
+
+        base = 0
+        if index[snv_pos] == 'A' :
+            base = 0
+        elif index[snv_pos] == 'C' :
+            base = 1
+        elif index[snv_pos] == 'G' :
+            base = 2
+        elif index[snv_pos] == 'T' :
+            base = 3
+
+        mut_map[3-base, snv_pos] = delta_logodds_true
+        mut_map_pred[3-base, snv_pos] = delta_logodds_pred
+
+    if mode == 'pred' :
+        mut_map[:, :] = mut_map_pred[:, :]
+    
+    #Down-scale PAS mutations
+    if pas_downscale_mode != 'frac' :
+        #max_val = np.max(np.abs(mut_map[:, 50:50+6]))
+        target_val = pas_downscaling
+        max_val = np.min(np.sum(mut_map[:, :], axis=0)) / 3.0
+        
+        pas_downscaling = target_val / max_val
+    
+    mut_map[:, 50:50+6] = mut_map[:, 50:50+6] * pas_downscaling
+    mut_map_pred[:, 50:50+6] = mut_map_pred[:, 50:50+6] * pas_downscaling
+    
+    #Slice according to seq trim index
+    ref_seq = ref_seq[seq_trim_start: seq_trim_end]
+    mut_map = mut_map[:, seq_trim_start: seq_trim_end]
+    mut_map_pred = mut_map_pred[:, seq_trim_start: seq_trim_end]
+
+    if mode != 'double' :
+        fig, ax = plt.subplots(2, 1, figsize=figsize)
+    else :
+        fig = plt.figure(figsize=figsize) 
+        gs = gridspec.GridSpec(2, 1, height_ratios=[1, 2])
+
+        ax0 = plt.subplot(gs[0])
+        ax1 = plt.subplot(gs[1])
+        ax = [ax0, ax1]
+
+    bias = np.max(np.sum(mut_map[:, :], axis=0)) / 3.0 + 0.5
+    max_score = np.min(np.sum(mut_map[:, :], axis=0)) / 3.0 * -1 + bias
+
+    for i in range(plot_start, plot_end) :
+        mutability_score = np.sum(mut_map[:, i]) / 3.0 * -1 + bias
+        letterAt(ref_seq[i], i + 0.5, 0, mutability_score, ax[0])
+
+    ax[0].plot([0, mut_map.shape[1]], [bias, bias], color='black', linestyle='--')
+    
+    for index, row in df_gene.iterrows() :
+        snv_pos = row['snv_pos'] - seq_trim_start
+        
+        if row['wt_seq'][seq_trim_start: seq_trim_end] != ref_seq or snv_pos >= seq_trim_end :
+            continue
+
+        base = 0
+        if index[row['snv_pos']] == 'A' :
+            base = 0
+        elif index[row['snv_pos']] == 'C' :
+            base = 1
+        elif index[row['snv_pos']] == 'G' :
+            base = 2
+        elif index[row['snv_pos']] == 'T' :
+            base = 3
+        
+        if row['significance'] in ['Pathogenic', 'Likely pathogenic'] and mark_pathogenic :
+            ax[1].add_patch(Rectangle((snv_pos + border_eta, 3 - base + border_eta), 1 - 2.*border_eta, 1 - 2.*border_eta, fill=False, edgecolor='red', lw=4))
+        elif row['significance'] in ['Benign', 'Likely benign'] and mark_benign :
+            ax[1].add_patch(Rectangle((snv_pos + border_eta, 3 - base + border_eta), 1 - 2.*border_eta, 1 - 2.*border_eta, fill=False, edgecolor='darkgreen', lw=4))
+        elif row['significance'] in ['Undetermined'] and mark_undetermined :
+            ax[1].add_patch(Rectangle((snv_pos + border_eta, 3 - base + border_eta), 1 - 2.*border_eta, 1 - 2.*border_eta, fill=False, edgecolor='darkblue', lw=4))
+
+    plt.sca(ax[0])
+    plt.yticks([0.5, bias, max_score], [round(bias - 0.5, 2), 0, round((max_score - bias) * -1, 2)], fontsize=16)
+    plt.xticks(fontsize=16)
+    plt.xlim((plot_start, plot_end)) 
+    plt.ylim((0, max_score)) 
+    plt.tight_layout()
+
+    if mode == 'subtract' :
+        subtract_map = mut_map - mut_map_pred
+        pcm = ax[1].pcolor(subtract_map, cmap='RdBu_r', vmin=-np.abs(mut_map).max(), vmax=np.abs(mut_map).max())
+    elif mode == 'double' :
+        double_map = np.zeros((8, mut_map.shape[1]))
+        double_map[[0, 2, 4, 6], :] = mut_map[:, :]
+        double_map[[1, 3, 5, 7], :] = mut_map_pred[:, :]
+        pcm = ax[1].pcolor(double_map, cmap='RdBu_r', vmin=-np.abs(double_map).max(), vmax=np.abs(double_map).max())
+    else :
+        pcm = ax[1].pcolor(mut_map, cmap='RdBu_r', vmin=-np.abs(mut_map).max(), vmax=np.abs(mut_map).max())
+    #fig.colorbar(pcm, ax=ax[1])
+    
+    if mode == 'both' :
+        for i in range(mut_map_pred.shape[0]) :
+            for j in range(mut_map_pred.shape[1]) :
+                verts = [((j, i), (j+1, i), (j+1, i+1))]
+                intensities = np.array([mut_map_pred[i, j]])
+
+                c = collections.PolyCollection(verts)
+                norm = mpl.colors.Normalize(vmin=-np.abs(mut_map_pred).max(), vmax=np.abs(mut_map_pred).max())
+                rgb_vals = cm.ScalarMappable(norm=norm, cmap=cm.get_cmap('RdBu_r')).to_rgba(intensities)
+                c.set_facecolors(rgb_vals)
+                ax[1].add_collection(c)
+
+    plt.sca(ax[1])
+
+    ref_seq_list = []
+    for c in ref_seq :
+        ref_seq_list.append(c)
+    plt.xticks(np.arange(len(ref_seq)) + 0.5, ref_seq_list)
+    plt.xticks([], [])
+
+    if mode == 'double' :
+        plt.yticks([0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5], ['T', 'T', 'G', 'G', 'C', 'C', 'A', 'A'], fontsize=16)
+        plt.axis([plot_start, plot_end, 0, 8])
+    else :
+        plt.yticks([0.5, 1.5, 2.5, 3.5], ['T', 'G', 'C', 'A'], fontsize=16)
+        plt.axis([plot_start, plot_end, 0, 4])
+    
+    plt.gca().xaxis.tick_top()
+
+    #plt.savefig(name + '.svg', bbox_inches='tight')
+    #plt.savefig(name + '.png', bbox_inches='tight')
+    plt.tight_layout()
+    
+    if fig_name is not None :
+        plt.savefig(fig_name + '.png', transparent=True, dpi=fig_dpi)
+        plt.savefig(fig_name + '.svg')
+        plt.savefig(fig_name + '.eps')
+    plt.show()
+    
+    return np.min(np.sum(mut_map[:, :], axis=0)) / 3.0
+
+
+def mut_map_with_cuts(df, gene_name, cut_snvs, mode, column_suffix='', figsize=(12, 6), height_ratios=[6, 2, 2], bg_alpha=0.5, plot_simple_mutmap=True, annotate_folds=True, plot_true_cuts=True, plot_pred_cuts=False, scale_pred_cuts=False, fold_change_from_cut_range=None, ref_var_scales=[0.3, 0.7], border_eta = 0.085, seq_trim_start=0, seq_trim_end=164, plot_start=0, plot_end=164, plot_as_bars=True, pas_downscaling=0.5, fig_name=None, fig_dpi=300) :
+
+    mut_map = np.zeros((4, 164))
+
+    df_gene = df.query("gene == '" + gene_name + "'")
+    ref_seq = df_gene['wt_seq'].values[0]
+
+    for index, row in df_gene.iterrows() :
+        snv_pos = row['snv_pos']
+        
+        if row['wt_seq'] != ref_seq :
+            continue
+
+        delta_logodds_true = row['delta_logodds_' + mode + column_suffix]
+        if np.isnan(delta_logodds_true) :
+            delta_logodds_true = 0
+
+        base = 0
+        if index[snv_pos] == 'A' :
+            base = 0
+        elif index[snv_pos] == 'C' :
+            base = 1
+        elif index[snv_pos] == 'G' :
+            base = 2
+        elif index[snv_pos] == 'T' :
+            base = 3
+
+        mut_map[3-base, snv_pos] = delta_logodds_true
+
+    #Down-scale PAS mutations
+    mut_map[:, 50:50+6] = mut_map[:, 50:50+6] * pas_downscaling
+    
+    #Slice according to seq trim index
+    ref_seq = ref_seq[seq_trim_start: seq_trim_end]
+    mut_map = mut_map[:, seq_trim_start: seq_trim_end]
+    
+    fig = plt.figure(figsize=figsize) 
+    gs = gridspec.GridSpec(3, 1, height_ratios=height_ratios)
+
+    ax0 = plt.subplot(gs[0])
+    ax1 = plt.subplot(gs[1])
+    ax2 = plt.subplot(gs[2])
+    ax = [ax0, ax1, ax2]
+
+    bias = np.max(np.sum(mut_map[:, :], axis=0)) / 3.0 + 0.5
+    max_score = np.min(np.sum(mut_map[:, :], axis=0)) / 3.0 * -1 + bias
+
+    for i in range(plot_start, plot_end) :
+        mutability_score = np.sum(mut_map[:, i]) / 3.0 * -1 + bias
+        
+        color = 'black'
+        alpha = bg_alpha
+        char_height = 1
+        
+        for snv_pos, snv_nt, snv_color in cut_snvs :
+            if i == snv_pos - seq_trim_start :
+                #color = snv_color#None
+                #alpha = 1.0
+                
+                color = 'black'
+                alpha = bg_alpha
+                char_height = ref_var_scales[0]
+                
+                letterAt(snv_nt, i + 0.5, ref_var_scales[0], ref_var_scales[1], ax[1], color=snv_color, alpha=1.0)
+                
+                break
+        
+        if not plot_simple_mutmap :
+            letterAt(ref_seq[i], i + 0.5, 0, mutability_score, ax[1], color=color, alpha=alpha)
+        else :
+            letterAt(ref_seq[i], i + 0.5, 0, char_height, ax[1], color=color, alpha=alpha)
+
+    if not plot_simple_mutmap :
+        ax[1].plot([0, mut_map.shape[1]], [bias, bias], color='black', linestyle='--')
+
+    plt.sca(ax[1])
+    
+    if not plot_simple_mutmap :
+        plt.yticks([0.5, bias, max_score], [round(bias - 0.5, 2), 0, round((max_score - bias) * -1, 2)], fontsize=16)
+        plt.ylim((0, max_score))
+    else :
+        plt.yticks([], [])
+        plt.ylim((0, ref_var_scales[0] + ref_var_scales[1]))
+        plt.axis('off')
+    
+    plt.xlim((plot_start, plot_end))
+    plt.tight_layout()
+
+    pcm = ax[2].pcolor(mut_map, cmap='RdBu_r', vmin=-np.abs(mut_map).max(), vmax=np.abs(mut_map).max())
+    #fig.colorbar(pcm, ax=ax[1])
+
+    plt.sca(ax[2])
+
+    ref_seq_list = []
+    for c in ref_seq :
+        ref_seq_list.append(c)
+    #plt.xticks(np.arange(len(ref_seq)) + 0.5, ref_seq_list)
+    plt.xticks([], [])
+
+    plt.yticks([0.5, 1.5, 2.5, 3.5], ['T', 'G', 'C', 'A'], fontsize=16)
+
+    #plt.gca().xaxis.tick_top()
+    #plt.xticks(fontsize=16)
+
+    plt.axis([plot_start, plot_end, 0, 4])
+    
+    for i in range(plot_start, plot_end) :
+        for j in range(0, 4) :
+            base = 'A'
+            if j == 3 :
+                base = 'A'
+            elif j == 2 :
+                base = 'C'
+            elif j == 1 :
+                base = 'G'
+            elif j == 0 :
+                base = 'T'
+            
+            is_marked = False
+            for snv_pos, snv_nt, _ in cut_snvs :
+                if i == snv_pos - seq_trim_start and base == snv_nt :
+                    is_marked = True
+                    break
+            
+            if not is_marked :
+                ax[2].add_patch(Rectangle((i, j), 1, 1, fill=True, facecolor='white', alpha=1. - bg_alpha, edgecolor=None))
+    
+    ref_cut_true = df_gene['pooled_cut_prob_true_wt'].values[0][seq_trim_start: seq_trim_end]
+    ref_cut_pred = df_gene['cut_prob_pred_wt'].values[0][seq_trim_start: seq_trim_end]
+    
+    max_y_var_hat = 0
+    for snv_pos, snv_nt, snv_color in cut_snvs :
+        df_pos = df_gene.query("snv_pos == " + str(snv_pos))
+        
+        var_cut_true = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_var'][0][seq_trim_start: seq_trim_end]
+        var_cut_pred = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0][seq_trim_start: seq_trim_end]
+        
+        if scale_pred_cuts :
+            ref_pred_logodds = np.zeros(ref_cut_pred.shape)
+            var_pred_logodds = np.zeros(var_cut_pred.shape)
+
+            ref_pred_logodds[ref_cut_pred > 0.0] = np.log(ref_cut_pred[ref_cut_pred > 0.0] / (1.0 - ref_cut_pred[ref_cut_pred > 0.0]))
+            var_pred_logodds[var_cut_pred > 0.0] = np.log(var_cut_pred[var_cut_pred > 0.0] / (1.0 - var_cut_pred[var_cut_pred > 0.0]))
+
+            pred_fold_change = np.exp(var_pred_logodds - ref_pred_logodds)
+
+            #var_cut_pred = ref_cut_true * pred_fold_change
+            ref_cut_true_odds = ref_cut_true / (1. - ref_cut_true)
+            var_cut_pred_odds = ref_cut_true_odds * pred_fold_change
+            var_cut_pred = var_cut_pred_odds / (1. + var_cut_pred_odds)
+        
+        if plot_true_cuts :
+            max_y_var_hat = max(max_y_var_hat, np.max(var_cut_true[plot_start:plot_end]))
+        if plot_pred_cuts :
+            max_y_var_hat = max(max_y_var_hat, np.max(var_cut_pred[plot_start:plot_end]))
+        
+        if plot_as_bars :
+            if plot_true_cuts :
+                ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_true[plot_start:plot_end], color=snv_color, alpha=0.85, where='mid', linewidth=3)
+            if plot_pred_cuts :
+                ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_pred[plot_start:plot_end], color=snv_color, linestyle='--', alpha=0.85, where='mid', linewidth=3)
+        else :
+            if plot_true_cuts :
+                ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_true[plot_start:plot_end], color=snv_color, linestyle='-', linewidth=3, alpha=0.7)
+            if plot_pred_cuts :
+                ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, var_cut_pred[plot_start:plot_end], color=snv_color, linestyle='--', linewidth=3, alpha=0.7)
+        
+        #Highlight specific snv in mutation map
+        
+        base = 0
+        if snv_nt == 'A' :
+            base = 0
+        elif snv_nt == 'C' :
+            base = 1
+        elif snv_nt == 'G' :
+            base = 2
+        elif snv_nt == 'T' :
+            base = 3
+        
+        #ax[2].add_patch(Rectangle((snv_pos, 3 - base), 1, 1, fill=False, edgecolor=snv_color, lw=4))
+        ax[2].add_patch(Rectangle((snv_pos - seq_trim_start + border_eta, 3 - base + border_eta), 1 - 2.*border_eta, 1 - 2.*border_eta, fill=False, edgecolor=snv_color, lw=4))
+        #ax[1].add_patch(Rectangle((snv_pos, 0), 1, max_score, fill=False, edgecolor=snv_color, lw=4))
+    
+    if plot_true_cuts :
+        max_y_var_hat = max(max_y_var_hat, np.max(ref_cut_true[plot_start:plot_end]))
+    if plot_pred_cuts and not scale_pred_cuts :
+        max_y_var_hat = max(max_y_var_hat, np.max(ref_cut_pred[plot_start:plot_end]))
+    
+    #Annotate min/max delta isoform log odds
+    min_mutmap_logodds = round((max_score - bias) * -1, 2)
+    max_mutmap_logodds = round(bias - 0.5, 2)
+    annot_text = 'Min = ' + str(min_mutmap_logodds) + '\nMax = ' + str(max_mutmap_logodds)
+    
+    ax[0].text(0.05, 0.80, annot_text,
+        horizontalalignment='left', verticalalignment='bottom',
+        transform=ax[0].transAxes,
+        color='black', fontsize=16, weight="bold")
+    
+    snv_i = 0
+    for snv_pos, snv_nt, snv_color in cut_snvs :
+        if annotate_folds :
+            if plot_true_cuts :
+                
+                df_pos = df_gene.query("snv_pos == " + str(snv_pos))
+                df_pos = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]
+                
+                fold_change = np.exp(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['delta_logodds_true' + column_suffix][0])
+                
+                if fold_change_from_cut_range :
+                    fold_range_start = fold_change_from_cut_range[0]
+                    fold_range_end = fold_change_from_cut_range[1]
+                    
+                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_wt'][0][fold_range_start: fold_range_end])
+                    var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_var'][0][fold_range_start: fold_range_end])
+                    
+                    fold_change = (var_p / (1. - var_p)) / (ref_p / (1. - ref_p))
+                
+                
+                fold_color = 'darkgreen'
+                if fold_change < 1. :
+                    fold_color = 'red'
+                    fold_change = 1. / fold_change
+                #fold_color = snv_color
+                
+                row_multiplier = 0.1
+                row_bias = 0
+                if plot_pred_cuts :
+                    row_multiplier = 0.2
+                
+                ax[0].text(0.70, 0.80 - row_multiplier * snv_i, snv_nt + ':',
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=snv_color, fontsize=16, weight="bold")
+                ax[0].text(0.73, 0.80 - row_multiplier * snv_i, 'Fold change = ' + str(round(fold_change, 2)),
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=fold_color, fontsize=16, weight="bold")
+            
+            if plot_pred_cuts :
+                
+                df_pos = df_gene.query("snv_pos == " + str(snv_pos))
+                df_pos = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]
+                
+                fold_change = np.exp(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['delta_logodds_pred' + column_suffix][0])
+                
+                if fold_change_from_cut_range :
+                    fold_range_start = fold_change_from_cut_range[0]
+                    fold_range_end = fold_change_from_cut_range[1]
+                    
+                    ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_wt'][0][fold_range_start: fold_range_end])
+                    var_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0][fold_range_start: fold_range_end])
+                    
+                    if scale_pred_cuts :
+                        ref_p = np.sum(df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_wt'][0][fold_range_start: fold_range_end])
+                        
+                        ref_cut_true_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['pooled_cut_prob_true_wt'][0]#[0: seq_trim_end]
+                        ref_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_wt'][0]#[0: seq_trim_end]
+                        var_cut_pred_t = df_pos[df_pos.index.str.slice(snv_pos, snv_pos + 1) == snv_nt]['cut_prob_pred_var'][0]#[0: seq_trim_end]
+
+                        ref_pred_logodds = np.zeros(ref_cut_pred_t.shape)
+                        var_pred_logodds = np.zeros(var_cut_pred_t.shape)
+
+                        ref_pred_logodds[ref_cut_pred_t > 0.0] = np.log(ref_cut_pred_t[ref_cut_pred_t > 0.0] / (1.0 - ref_cut_pred_t[ref_cut_pred_t > 0.0]))
+                        var_pred_logodds[var_cut_pred_t > 0.0] = np.log(var_cut_pred_t[var_cut_pred_t > 0.0] / (1.0 - var_cut_pred_t[var_cut_pred_t > 0.0]))
+
+                        pred_fold_change = np.exp(var_pred_logodds - ref_pred_logodds)
+
+                        #var_cut_pred = ref_cut_true * pred_fold_change
+                        ref_cut_true_odds = ref_cut_true_t / (1. - ref_cut_true_t)
+                        var_cut_pred_odds = ref_cut_true_odds * pred_fold_change
+                        var_cut_pred_t = var_cut_pred_odds / (1. + var_cut_pred_odds)
+                        var_p = np.sum(var_cut_pred_t[fold_range_start: fold_range_end])
+                    
+                    fold_change = (var_p / (1. - var_p)) / (ref_p / (1. - ref_p))
+                
+                
+                fold_color = 'darkgreen'
+                if fold_change < 1. :
+                    fold_color = 'red'
+                    fold_change = 1. / fold_change
+                #fold_color = snv_color
+                
+                row_multiplier = 0.1
+                row_bias = 0.0
+                if plot_true_cuts :
+                    row_multiplier = 0.2
+                    row_bias = 0.1
+                
+                ax[0].text(0.70, 0.80 - row_multiplier * snv_i - row_bias, snv_nt + ':',
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=snv_color, fontsize=16, weight="bold")
+                ax[0].text(0.73, 0.80 - row_multiplier * snv_i - row_bias, 'Predicted change = ' + str(round(fold_change, 2)),
+                    horizontalalignment='left', verticalalignment='bottom',
+                    transform=ax[0].transAxes,
+                    color=fold_color, fontsize=16, weight="bold")
+        
+        snv_i += 1
+    
+    #Plot reference cut distribution
+    if plot_as_bars :
+        if plot_true_cuts :
+            ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_true[plot_start:plot_end], color='black', alpha=0.85, where='mid', linewidth=3)
+        if plot_pred_cuts and not scale_pred_cuts :
+            ax[0].step(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_pred[plot_start:plot_end], color='black', linestyle='--', alpha=0.85, where='mid', linewidth=3)
+    else :
+        if plot_true_cuts :
+            ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_true[plot_start:plot_end], color='black', linestyle='-', linewidth=3, alpha=0.7)    
+        if plot_pred_cuts and not scale_pred_cuts :
+            ax[0].plot(np.arange(plot_end)[plot_start:plot_end] + 1, ref_cut_pred[plot_start:plot_end], color='black', linestyle='--', linewidth=3, alpha=0.7)
+
+    #ax[0].plot([57, 57], [0, max(np.max(ref_cut[:164]), max_y_var_hat)], color='green', linestyle='--', linewidth=3)
+    #ax[0].plot([97, 97], [0, max(np.max(ref_cut[:164]), max_y_var_hat)], color='green', linestyle='--', linewidth=3)
+
+    plt.sca(ax[0])
+    plt.xlim((plot_start, plot_end))
+    plt.yticks(fontsize=16)
+    plt.ylim(0, max_y_var_hat * 1.02)
+
+    plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    plt.tight_layout()
+    
+    if fig_name is not None :
+        plt.savefig(fig_name + '.png', transparent=True, dpi=fig_dpi)
+        plt.savefig(fig_name + '.svg')
+        plt.savefig(fig_name + '.eps')
+    plt.show()
+
