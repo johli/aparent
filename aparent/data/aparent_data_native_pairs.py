@@ -19,7 +19,7 @@ import isolearn.keras as iso
 
 def load_data(batch_size=32, valid_set_size=0.0, test_set_size=1.0, file_path='') :
 
-    #Load array data
+    #Load leslie/apadb pair-wise data
     native_dict = isoio.load(file_path + 'apa_leslie_apadb_pair_data')
     native_df = native_dict['df_pair']
 
