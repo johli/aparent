@@ -11,9 +11,6 @@ __pycache__/
 *.npy
 *.npz
 
-*.bed
-*.fa
-
 .ipynb_checkpoints/
 model_checkpoints/
 
