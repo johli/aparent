@@ -19,9 +19,6 @@ import websockets
 import asyncio
 import signal
 
-import isolearn.io as isoio
-import isolearn.keras as iso
-
 import logging
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
