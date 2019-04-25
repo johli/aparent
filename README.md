@@ -8,8 +8,7 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 # Data Availability
 
 [Processed Data Repository](https://drive.google.com/open?id=1qex3oY-rarsd7YowM7TxxUklLbLkUyOT)<br/>
-<br/>
-[Processed Data Repository (legacy)](https://drive.google.com/open?id=1Q2tTIRIR0C3kL7stI51TPLdGMdbZ0WnV)
+[Processed Data Repository (legacy)](https://drive.google.com/open?id=1Q2tTIRIR0C3kL7stI51TPLdGMdbZ0WnV)<br/>
 
 # Designed MPRA Analysis Notebooks
 [Notebook 0a: Basic MPRA Library Statistics](analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
