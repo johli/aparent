@@ -14,6 +14,19 @@ from scipy.stats import norm
 
 import operator
 
+import sklearn.linear_model as sklinear
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import Pipeline
+from sklearn.tree import DecisionTreeRegressor
+
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import roc_curve, roc_auc_score
+from scipy.stats import pearsonr
+
+import scipy.optimize as spopt
+from scipy.optimize import minimize
+
 #Two-sided proportion difference test
 def differential_prop_test(count_1, total_count_1, count_2, total_count_2) :
     p1_hat = count_1 / total_count_1
@@ -103,6 +116,58 @@ def join_apa_dataframes(pair_dict, pair_pred_dict, leslie_tissue_index, apadb_ti
 	pred_cleavage_prob_dist = pred_cleavage_prob_dist[np.ravel(pair_df['row_index_pred'].values), :]
 
 	return pair_df, leslie_cleavage_count_prox_dict, leslie_cleavage_prob_prox_dict, leslie_cleavage_count_dist_dict, leslie_cleavage_prob_dist_dict, pred_cleavage_prob_prox, pred_cleavage_prob_dist
+
+#Join APA dataframe with individual site predictions (non-normalized APARENT log odds scores)
+def join_apa_dataframe_individual_site_predictions(df, pred_cleavage_prob, pair_df, leslie_cleavage_count_prox_dict, leslie_cleavage_prob_prox_dict, leslie_cleavage_count_dist_dict, leslie_cleavage_prob_dist_dict, pred_cleavage_prob_prox, pred_cleavage_prob_dist) :
+    #Calculate relative APADB cut start and end positions within each sequence
+    def get_start_pos(row) :
+        if row['strand'] == '+' :
+            return row['cut_start'] - row['pas_pos'] + 50
+        else :
+            return row['pas_pos'] - row['cut_end'] + 56
+
+    def get_end_pos(row) :
+        if row['strand'] == '+' :
+            return row['cut_end'] - row['pas_pos'] + 50
+        else :
+            return row['pas_pos'] - row['cut_start'] + 56
+
+    df['rel_start'] = df.apply(get_start_pos, axis=1)
+    df['rel_end'] = df.apply(get_end_pos, axis=1)
+
+    #Calculate predicted isoform use from predicted cut proportions
+    pred_cleavage_prob_dense = np.array(pred_cleavage_prob.todense())
+
+    predicted_iso_from_cuts = []
+    i = 0
+    for _, row in df.iterrows() :
+        cut_start = row['rel_start']
+        cut_end = row['rel_end']
+        predicted_iso_from_cuts.append(np.sum(pred_cleavage_prob_dense[i, cut_start: cut_end]))
+        
+        i += 1
+
+    df['iso_pred_apadb_region'] = predicted_iso_from_cuts
+    df['logodds_pred_apadb_region'] = np.log(df['iso_pred_apadb_region'] / (1. - df['iso_pred_apadb_region']))
+
+    pair_df['row_index'] = np.arange(len(pair_df), dtype=np.int)
+
+    df_to_join = df[['gene_id', 'iso_pred_apadb_region', 'logodds_pred_apadb_region']].copy()
+
+    pair_df = pair_df.join(df_to_join.set_index('gene_id'), on='gene_id', how='inner').copy().reset_index(drop=True)
+    pair_df = pair_df.join(df_to_join.set_index('gene_id'), on='gene_id_dist', how='inner', lsuffix='_prox', rsuffix='_dist').copy().reset_index(drop=True)
+
+    for cell_type in leslie_cleavage_prob_prox_dict :
+        leslie_cleavage_count_prox_dict[cell_type] = leslie_cleavage_count_prox_dict[cell_type][np.ravel(pair_df['row_index'].values), :]
+        leslie_cleavage_prob_prox_dict[cell_type] = leslie_cleavage_prob_prox_dict[cell_type][np.ravel(pair_df['row_index'].values), :]
+    for cell_type in leslie_cleavage_prob_dist_dict :
+        leslie_cleavage_count_dist_dict[cell_type] = leslie_cleavage_count_dist_dict[cell_type][np.ravel(pair_df['row_index'].values), :]
+        leslie_cleavage_prob_dist_dict[cell_type] = leslie_cleavage_prob_dist_dict[cell_type][np.ravel(pair_df['row_index'].values), :]
+
+    pred_cleavage_prob_prox = pred_cleavage_prob_prox[np.ravel(pair_df['row_index'].values), :]
+    pred_cleavage_prob_dist = pred_cleavage_prob_dist[np.ravel(pair_df['row_index'].values), :]
+
+    return pair_df, leslie_cleavage_count_prox_dict, leslie_cleavage_prob_prox_dict, leslie_cleavage_count_dist_dict, leslie_cleavage_prob_dist_dict, pred_cleavage_prob_prox, pred_cleavage_prob_dist
 
 #Basic statistics plotting functions
 def plot_cut_2mers(df, cell_type, cleavage_mat, seq_column='seq') :
@@ -835,7 +900,9 @@ def fit_linear_model(X_train, y_train, X_test, y_test, l2_lambda=None, l1_lambda
     SSE = (y_test - y_test_hat).T.dot(y_test - y_test_hat)
     y_test_average = np.average(y_test, axis=0)
     SStot = (y_test - y_test_average).T.dot(y_test - y_test_average)
-    rsquare = 1.0 - (SSE / SStot)
+    rsquare = 0.
+    if SStot != 0. :
+        rsquare = 1.0 - (SSE / SStot)
 
     accuracy = float(np.count_nonzero(np.sign(y_test) == np.sign(y_test_hat))) / float(X_test.shape[0])
     
@@ -860,7 +927,9 @@ def fit_logistic_model(X_train, y_train, X_test, y_test, l2_lambda=None) :
     SSE = (y_test - y_test_hat).T.dot(y_test - y_test_hat)
     y_test_average = np.average(y_test, axis=0)
     SStot = (y_test - y_test_average).T.dot(y_test - y_test_average)
-    rsquare = 1.0 - (SSE / SStot)
+    rsquare = 0.
+    if SStot != 0. :
+        rsquare = 1.0 - (SSE / SStot)
 
     accuracy = float(np.count_nonzero(np.sign(y_test) == np.sign(y_test_hat))) / float(X_test.shape[0])
     
@@ -879,7 +948,9 @@ def fit_loocv_model(X, y, l2_lambda=None) :
     SSE = (y - y_hat).T.dot(y - y_hat)
     y_average = np.average(y, axis=0)
     SStot = (y - y_average).T.dot(y - y_average)
-    rsquare = 1.0 - (SSE / SStot)
+    rsquare = 0.
+    if SStot != 0. :
+        rsquare = 1.0 - (SSE / SStot)
 
     accuracy = float(np.count_nonzero(np.sign(y) == np.sign(y_hat))) / float(X.shape[0])
     
@@ -897,7 +968,9 @@ def predict_with_model(X, y, weight_bundle) :
     SSE = (y - y_hat).T.dot(y - y_hat)
     y_average = np.average(y, axis=0)
     SStot = (y - y_average).T.dot(y - y_average)
-    rsquare = 1.0 - (SSE / SStot)
+    rsquare = 0.
+    if SStot != 0. :
+        rsquare = 1.0 - (SSE / SStot)
 
     accuracy = float(np.count_nonzero(np.sign(y) == np.sign(y_hat))) / float(X.shape[0])
     
@@ -930,6 +1003,31 @@ def kl_div_gradients(w_bundle, X, y_true, alpha=0.0) :
     w_bundle_grads[1:] = kl_grad_w
     
     return w_bundle_grads
+
+#Helper function to generate cell type-specific train/test features
+def get_data(df, source_data, tissue, special_mode, pred_special_mode, pseudo_count=0.5, min_total_count=20, only_differentials=False) :
+    count_col = source_data + '_count' + special_mode + '_' + tissue + '_prox'
+    total_count_col = source_data + '_pair_count' + special_mode + '_' + tissue
+
+    df_to_use = df.query(total_count_col + " >= " + str(min_total_count))
+    if only_differentials :
+        df_to_use = df_to_use.query(count_col + " != " + total_count_col + " and " + count_col + " != 0")
+
+    total_count = np.ravel(df_to_use[total_count_col].values)
+    y_ratio = (df_to_use[count_col] + pseudo_count) / (df_to_use[total_count_col] + 2. * pseudo_count)
+    y_logodds = np.log(y_ratio / (1. - y_ratio))
+
+    prox_score = np.ravel(df_to_use['logodds_pred' + pred_special_mode + '_prox'].values).reshape(-1, 1)
+    dist_score = np.ravel(df_to_use['logodds_pred' + pred_special_mode + '_dist'].values).reshape(-1, 1)
+    distance = np.ravel(np.log(df_to_use['distance'])).reshape(-1, 1)
+
+    X = np.concatenate([
+        prox_score,
+        dist_score,
+        distance
+    ], axis=1)
+
+    return X, y_ratio, y_logodds, total_count, df_to_use
 
 #Evaluate and plot prediction performance against cell types using Pooled-APADB fitted APARENT model
 def evaluate_predicted_vs_observed_tissues(pair_df, source_data, tissue_index, suffix_index, site_nums, site_types, pseudo_count, max_n_members) :
@@ -1082,26 +1180,27 @@ def evaluate_predicted_vs_observed_tissues(pair_df, source_data, tissue_index, s
             
             if not differentials_only :
                 r2_tissues[tissue_i] = round(r_val * r_val, 2)
-                auc_tissues[tissue_i] = round(auc, 3)
+                auc_tissues[tissue_i] = round(auc_highconf, 3)
                 n_samples_tissues[tissue_i] = len(total_count)
                 read_depth_tissues[tissue_i] = round(np.mean(total_count), 1)
-                roc_tissues.append([fpr, tpr])
+                roc_tissues.append([fpr_highconf, tpr_highconf])
 
     plt.show()
 
     return r2_tissues, auc_tissues, n_samples_tissues, read_depth_tissues, roc_tissues
 
-def plot_performance_double_bar(tissue_index, measures_1, measure_2) :
+def plot_performance_double_bar(tissue_index, measure_1, measure_2, measure_1_label='', measure_2_label='') :
     f, ax = plt.subplots(1, 2, figsize=(8, 6))
 
     #Plot Number of Sample APA sites per cell type
-    ax[0].barh(np.arange(len(tissue_index)), measures_1[::-1], edgecolor='black', linewidth=1, alpha=1.0)
+    ax[0].barh(np.arange(len(tissue_index)), measure_1[::-1], edgecolor='black', linewidth=1, alpha=1.0)
     plt.sca(ax[0])
     plt.yticks(np.arange(len(tissue_index)), tissue_index[::-1], fontsize=14)
     plt.ylim(-0.75, len(tissue_index))
     plt.gca().xaxis.tick_top()
+    plt.xlim(np.min(measure_1), np.max(measure_1))
 
-    plt.xlabel('Num APA Sites', fontsize=14)
+    plt.xlabel(measure_1_label, fontsize=14)
 
     #Plot Mean Read Depth per cell type
     ax[1].barh(np.arange(len(tissue_index)), measure_2[::-1], edgecolor='black', linewidth=1, alpha=1.0)
@@ -1109,9 +1208,70 @@ def plot_performance_double_bar(tissue_index, measures_1, measure_2) :
     plt.yticks(np.arange(len(tissue_index)), tissue_index[::-1], fontsize=14)
     plt.ylim(-0.75, len(tissue_index))
     plt.gca().xaxis.tick_top()
+    plt.xlim(np.min(measure_2), np.max(measure_2))
 
-    plt.xlabel('Avg Read Depth', fontsize=14)
+    plt.xlabel(measure_2_label, fontsize=14)
 
     plt.tight_layout()
     plt.show()
+
+def plot_tissue_result(tissue_name, tissue_results, ax_scatter, ax_roc, max_n_members, use_test=True, use_logodds=False) :
+    y_logodds_tissue = np.ravel(tissue_results['y_logodds_test'])
+    y_ratio_tissue = np.ravel(tissue_results['y_ratio_test'])
+    y_logodds_tissue_hat = np.ravel(tissue_results['y_logodds_test_hat'])
+    y_ratio_tissue_hat = np.ravel(tissue_results['y_ratio_test_hat'])
+    y_count_tissue = np.ravel(tissue_results['y_count_test'])
+    if not use_test :
+        y_logodds_tissue = np.ravel(tissue_results['y_logodds'])
+        y_ratio_tissue = np.ravel(tissue_results['y_ratio'])
+        y_logodds_tissue_hat = np.ravel(tissue_results['y_logodds_hat'])
+        y_ratio_tissue_hat = np.ravel(tissue_results['y_ratio_hat'])
+        y_count_tissue = np.ravel(tissue_results['y_count'])
+
+    if max_n_members is not None :
+        sort_index = np.argsort(y_count_tissue)[::-1]
+        y_count_tissue = y_count_tissue[sort_index[:max_n_members]]
+        y_ratio_tissue = y_ratio_tissue[sort_index[:max_n_members]]
+        y_ratio_tissue_hat = y_ratio_tissue_hat[sort_index[:max_n_members]]
+        y_logodds_tissue = y_logodds_tissue[sort_index[:max_n_members]]
+        y_logodds_tissue_hat = y_logodds_tissue_hat[sort_index[:max_n_members]]
+
+    r_val, p_val = pearsonr(y_logodds_tissue_hat, y_logodds_tissue)
+    if not use_logodds :
+        r_val, p_val = pearsonr(y_ratio_tissue_hat, y_ratio_tissue)
+
+    y_label_tissue = np.zeros(y_ratio_tissue.shape[0])
+    y_label_tissue[y_ratio_tissue <= 0.5] = 0
+    y_label_tissue[y_ratio_tissue > 0.5] = 1
+
+    fpr, tpr, _ = roc_curve(y_label_tissue, y_ratio_tissue_hat)
+    auc = roc_auc_score(y_label_tissue, y_ratio_tissue_hat)
+    
+    fpr_highconf, tpr_highconf, _ = roc_curve(y_label_tissue[(y_ratio_tissue <= 0.25) | (y_ratio_tissue >= 0.75)], y_ratio_tissue_hat[(y_ratio_tissue <= 0.25) | (y_ratio_tissue >= 0.75)])
+    auc_highconf = roc_auc_score(y_label_tissue[(y_ratio_tissue <= 0.25) | (y_ratio_tissue >= 0.75)], y_ratio_tissue_hat[(y_ratio_tissue <= 0.25) | (y_ratio_tissue >= 0.75)])
+
+    if use_logodds :
+        ax_scatter.scatter(y_logodds_tissue_hat, y_logodds_tissue, alpha=0.25, c='black', s=5)
+    else :
+        ax_scatter.scatter(y_ratio_tissue_hat, y_ratio_tissue, alpha=0.25, c='black', s=5)
+    plt.sca(ax_scatter)
+    plt.ylabel(tissue_name)
+    plt.xticks([], [])
+    plt.yticks([], [])
+    plt.title('R^2 = ' + str(round(r_val * r_val, 2)))
+
+    l1 = ax_roc.plot(fpr, tpr, linewidth=2, color='black', label='AUC = ' + str(round(auc, 3)))
+    l1_highconf = ax_roc.plot(fpr_highconf, tpr_highconf, linewidth=2, color='red', label='AUC = ' + str(round(auc_highconf, 3)))
+    
+    plt.sca(ax_roc)
+    plt.xticks([], [])
+    plt.yticks([], [])
+    plt.xlim(0-0.01, 1)
+    plt.ylim(0, 1+0.01)
+    plt.legend(handles=[l1[0], l1_highconf[0]], fontsize=9, frameon=False, loc='lower right')
+    
+    n_samples = len(y_ratio_tissue)
+    avg_reads = np.mean(y_count_tissue)
+    
+    return n_samples, avg_reads, r_val * r_val, auc, [fpr, tpr], auc_highconf, [fpr_highconf, tpr_highconf]
 
