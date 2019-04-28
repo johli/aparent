@@ -10,6 +10,9 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 [Processed Data Repository](https://drive.google.com/open?id=1qex3oY-rarsd7YowM7TxxUklLbLkUyOT)<br/>
 [Processed Data Repository (legacy)](https://drive.google.com/open?id=1Q2tTIRIR0C3kL7stI51TPLdGMdbZ0WnV)<br/>
 
+# Random MPRA Analysis Notebooks
+[Notebook 1: MPRA Prediction Evaluation](analysis/evaluate_aparent_random_mpra_legacy.ipynb)<br/>
+
 # Designed MPRA Analysis Notebooks
 [Notebook 0a: Basic MPRA Library Statistics](analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
 [Notebook 0b: MPRA LoFi vs. HiFi Replicates](analysis/analyze_aparent_designed_mpra_lofi_vs_hifi_legacy.ipynb)<br/>
@@ -34,3 +37,11 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 [Notebook 5f: Complex Functional Variants (Folding)](analysis/analyze_aparent_designed_mpra_rare_functional_variants_detailed_folding_legacy.ipynb)<br/>
 
 [Notebook Bonus: TGTA Motif Saturation Mutagenesis](analysis/analyze_aparent_designed_mpra_tgta_mutation_maps_legacy.ipynb)<br/>
+
+# Native APA Analysis Notebooks
+#### (APADB/Leslie APA Atlas)
+[Notebook 0: Basic Data Statistics](analysis/analyze_leslie_apadb_celltypes_basic_stats_legacy.ipynb)<br/>
+[Notebook 1: Differential Usage Analysis](analysis/analyze_leslie_apadb_celltypes_differential_usage_legacy.ipynb)<br/>
+[Notebook 2: Cleavage Site Prediction](analysis/analyze_leslie_apadb_celltypes_cleavage_predictions_legacy.ipynb)<br/>
+[Notebook 3: APA Isoform Prediction](analysis/analyze_leslie_apadb_celltypes_isoform_predictions_legacy.ipynb)<br/>
+[Notebook 4: APA Isoform Prediction (Cross-Validation)](analysis/analyze_leslie_apadb_celltypes_crossvalidate_isoform_predictions_legacy.ipynb)<br/>
