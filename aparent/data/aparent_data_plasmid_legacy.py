@@ -17,7 +17,7 @@ import isolearn.io as isoio
 import isolearn.keras as iso
 
 
-def load_data(batch_size=32, valid_set_size=0.025, test_set_size=0.025, file_path='', kept_libraries=None) :
+def load_data(batch_size=32, valid_set_size=0.025, test_set_size=0.025, file_path='', kept_libraries=None, canonical_pas=False) :
 
     #Load plasmid data
     #plasmid_dict = pickle.load(open('apa_plasmid_data' + data_version + '.pickle', 'rb'))
@@ -29,13 +29,25 @@ def load_data(batch_size=32, valid_set_size=0.025, test_set_size=0.025, file_pat
         keep_index = np.nonzero(plasmid_df.library_index.isin(kept_libraries))[0]
         plasmid_df = plasmid_df.iloc[keep_index].copy()
         plasmid_cuts = plasmid_cuts[keep_index, :]
+
+    if canonical_pas :
+        keep_index = np.nonzero(plasmid_df.seq.str.slice(50, 56) == 'AATAAA')[0]
+        plasmid_df = plasmid_df.iloc[keep_index].copy()
+        plasmid_cuts = plasmid_cuts[keep_index, :]
     
     #Generate training and test set indexes
     plasmid_index = np.arange(len(plasmid_df), dtype=np.int)
 
-    plasmid_train_index = plasmid_index[:-int(len(plasmid_df) * (valid_set_size + test_set_size))]
-    plasmid_valid_index = plasmid_index[plasmid_train_index.shape[0]:-int(len(plasmid_df) * test_set_size)]
-    plasmid_test_index = plasmid_index[plasmid_train_index.shape[0] + plasmid_valid_index.shape[0]:]
+    plasmid_train_index, plasmid_valid_index, plasmid_test_index = None, None, None
+
+    if valid_set_size <= 1.0 and test_set_size <= 1.0 :
+        plasmid_train_index = plasmid_index[:-int(len(plasmid_df) * (valid_set_size + test_set_size))]
+        plasmid_valid_index = plasmid_index[plasmid_train_index.shape[0]:-int(len(plasmid_df) * test_set_size)]
+        plasmid_test_index = plasmid_index[plasmid_train_index.shape[0] + plasmid_valid_index.shape[0]:]
+    else :
+        plasmid_train_index = plasmid_index[:-(valid_set_size + test_set_size)]
+        plasmid_valid_index = plasmid_index[plasmid_train_index.shape[0]:-test_set_size]
+        plasmid_test_index = plasmid_index[plasmid_train_index.shape[0] + plasmid_valid_index.shape[0]:]
 
     print('Training set size = ' + str(plasmid_train_index.shape[0]))
     print('Validation set size = ' + str(plasmid_valid_index.shape[0]))
