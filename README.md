@@ -5,8 +5,10 @@ APAReNt was trained on >3.5 million randomized 3' UTR polyadenylation signals ex
 
 Forward-engineering of new polyadenylation signals is done using the included SeqProp (Stochastic Sequence Backpropagation) software, which implements a gradient-based input maximization algorithm and uses APAReNt as the predictor.
 
-## Data Availability
+## Legacy Model & Code Availability
+[Legacy Code Repository](https://github.com/johli/aparent-legacy)<br/>
 
+## Data Availability
 [Processed Data Repository](https://drive.google.com/open?id=1qex3oY-rarsd7YowM7TxxUklLbLkUyOT)<br/>
 [Processed Data Repository (legacy)](https://drive.google.com/open?id=1Q2tTIRIR0C3kL7stI51TPLdGMdbZ0WnV)<br/>
 
