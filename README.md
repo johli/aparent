@@ -11,15 +11,20 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 [Processed Data Repository (legacy)](https://drive.google.com/open?id=1Q2tTIRIR0C3kL7stI51TPLdGMdbZ0WnV)<br/>
 
 # Random MPRA Linear Model Notebooks
-[Notebook 1: Isoform Log Odds Ratio Analysis](analysis/analyze_random_mpra_alien1_isoform_logodds_ratios.ipynb) ([Alien1 Library](analysis/analyze_random_mpra_alien1_isoform_logodds_ratios.ipynb) | [Alien2 Library](analysis/analyze_random_mpra_alien2_isoform_logodds_ratios.ipynb)) <br/>
-[Notebook 2: Cleavage Log Odds Ratio Analysis (Alien1 Library)](analysis/analyze_random_mpra_alien1_cleavage_logodds_ratios.ipynb)<br/>
-[Notebook 3: Hexamer Logistic Regression (Combined Library)](analysis/analyze_random_mpra_combined_logistic_regression.ipynb) ([Alien1 Library](analysis/analyze_random_mpra_alien1_logistic_regression.ipynb) | [Alien2 Library](analysis/analyze_random_mpra_alien2_logistic_regression.ipynb) | [TOMM5 Library](analysis/analyze_random_mpra_tomm5_logistic_regression.ipynb)) <br/>
+[Notebook 1a: Isoform Log Odds Ratio Analysis (Alien1 Library)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_alien1_isoform_logodds_ratios.ipynb)<br/>
+[Notebook 1b: Isoform Log Odds Ratio Analysis (Alien2 Library)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_alien2_isoform_logodds_ratios.ipynb)<br/>
+[Notebook 2: Cleavage Log Odds Ratio Analysis (Alien1 Library)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_alien1_cleavage_logodds_ratios.ipynb)<br/>
+[Notebook 3a: Hexamer Logistic Regression (Combined Library)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_combined_logistic_regression.ipynb)<br/>
+[Notebook 3b: Hexamer Logistic Regression (TOMM5 Library only)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_tomm5_logistic_regression.ipynb)<br/>
+[Notebook 3c: Hexamer Logistic Regression (Alien1 Library only)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_alien1_logistic_regression.ipynb)<br/>
+[Notebook 3d: Hexamer Logistic Regression (Alien2 Library only)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_random_mpra_alien2_logistic_regression.ipynb)<br/>
 
 # Random MPRA Neural Network Notebooks
-[Notebook 1: MPRA Prediction Evaluation](analysis/evaluate_aparent_random_mpra_legacy.ipynb)<br/>
-[Notebook 2: Conv Layer 1 and 2 Analysis](analysis/analyze_aparent_conv_layers_alien1_legacy.ipynb) ([Alien1 Library](analysis/analyze_aparent_conv_layers_alien1_legacy.ipynb) | [Alien2 Library](analysis/analyze_aparent_conv_layers_alien2_legacy.ipynb)) <br/>
-[Notebook 3: CSE Hexamer Filter (Conv Layer 1)](analysis/analyze_aparent_conv_layer_1_scaled_alien2_legacy.ipynb) <br/>
-[Notebook 4: Cleavage Motifs (Conv Layer 1)](analysis/analyze_aparent_conv_layer_1_cleavage_alien1_memory_efficient_legacy.ipynb) <br/>
+[Notebook 1: MPRA Prediction Evaluation](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/evaluate_aparent_random_mpra_legacy.ipynb)<br/>
+[Notebook 2a: Conv Layer 1 and 2 Analysis (Alien1 Library)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layers_alien1_legacy.ipynb)<br/>
+[Notebook 2b: Conv Layer 1 and 2 Analysis (Alien2 Library)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layers_alien2_legacy.ipynb)<br/>
+[Notebook 3: CSE Hexamer Filter (Conv Layer 1)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layer_1_scaled_alien2_legacy.ipynb) <br/>
+[Notebook 4: Cleavage Motifs (Conv Layer 1)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layer_1_cleavage_alien1_memory_efficient_legacy.ipynb) <br/>
 
 # Designed MPRA Analysis Notebooks
 [Notebook 0a: Basic MPRA Library Statistics](analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
