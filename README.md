@@ -12,6 +12,9 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 
 # Random MPRA Analysis Notebooks
 [Notebook 1: MPRA Prediction Evaluation](analysis/evaluate_aparent_random_mpra_legacy.ipynb)<br/>
+[Notebook 2: Conv Layer 1 and 2 Analysis](analysis/analyze_aparent_conv_layers_alien1_legacy.ipynb) ([Alien1 Library](analysis/analyze_aparent_conv_layers_alien1_legacy.ipynb) | [Alien2 Library](analysis/analyze_aparent_conv_layers_alien2_legacy.ipynb)) <br/>
+[Notebook 3: CSE Hexamer Filter (Conv Layer 1)](analysis/analyze_aparent_conv_layer_1_scaled_alien2_legacy.ipynb) <br/>
+[Notebook 4: Cleavage Motifs (Conv Layer 1)](analysis/analyze_aparent_conv_layer_1_cleavage_alien1_memory_efficient_legacy.ipynb) <br/>
 
 # Designed MPRA Analysis Notebooks
 [Notebook 0a: Basic MPRA Library Statistics](analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
