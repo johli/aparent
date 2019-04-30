@@ -12,7 +12,7 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 
 # Random MPRA Linear Model Notebooks
 [Notebook 1: Isoform Log Odds Ratio Analysis](analysis/analyze_random_mpra_alien1_isoform_logodds_ratios.ipynb) ([Alien1 Library](analysis/analyze_random_mpra_alien1_isoform_logodds_ratios.ipynb) | [Alien2 Library](analysis/analyze_random_mpra_alien2_isoform_logodds_ratios.ipynb)) <br/>
-[Notebook 2: Cleavage Log Odds Ratio Analysis (Alien1)](analysis/analyze_random_mpra_alien1_cleavage_logodds_ratios.ipynb)<br/>
+[Notebook 2: Cleavage Log Odds Ratio Analysis (Alien1 Library)](analysis/analyze_random_mpra_alien1_cleavage_logodds_ratios.ipynb)<br/>
 [Notebook 3: Hexamer Logistic Regression (Combined Library)](analysis/analyze_random_mpra_combined_logistic_regression.ipynb) ([Alien1 Library](analysis/analyze_random_mpra_alien1_logistic_regression.ipynb) | [Alien2 Library](analysis/analyze_random_mpra_alien2_logistic_regression.ipynb) | [TOMM5 Library](analysis/analyze_random_mpra_tomm5_logistic_regression.ipynb)) <br/>
 
 # Random MPRA Neural Network Notebooks
