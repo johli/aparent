@@ -29,6 +29,59 @@ def get_target_entropy_mse(pwm_start=0, pwm_end=100, target_bits=2.0) :
     
     return target_entropy_mse
 
+def get_target_entropy_mae(pwm_start=0, pwm_end=100, target_bits=2.0) :
+    
+    def target_entropy_mae(pwm) :
+        pwm_section = pwm[:, pwm_start:pwm_end, :, :]
+        entropy = pwm_section * -K.log(K.clip(pwm_section, K.epsilon(), 1. - K.epsilon())) / K.log(2.0)
+        entropy = K.sum(entropy, axis=(2, 3))
+        conservation = 2.0 - entropy
+
+        return K.mean(K.abs(conservation - target_bits), axis=-1)
+    
+    return target_entropy_mae
+
+def get_target_entropy_sme(pwm_start=0, pwm_end=100, target_bits=2.0) :
+    
+    def target_entropy_sme(pwm) :
+        pwm_section = pwm[:, pwm_start:pwm_end, :, :]
+        entropy = pwm_section * -K.log(K.clip(pwm_section, K.epsilon(), 1. - K.epsilon())) / K.log(2.0)
+        entropy = K.sum(entropy, axis=(2, 3))
+        conservation = 2.0 - entropy
+
+        return (K.mean(conservation, axis=-1) - target_bits)**2
+    
+    return target_entropy_sme
+
+def get_target_entropy_ame(pwm_start=0, pwm_end=100, target_bits=2.0) :
+    
+    def target_entropy_ame(pwm) :
+        pwm_section = pwm[:, pwm_start:pwm_end, :, :]
+        entropy = pwm_section * -K.log(K.clip(pwm_section, K.epsilon(), 1. - K.epsilon())) / K.log(2.0)
+        entropy = K.sum(entropy, axis=(2, 3))
+        conservation = 2.0 - entropy
+
+        return K.abs(K.mean(conservation, axis=-1) - target_bits)
+    
+    return target_entropy_ame
+
+def get_margin_entropy(pwm_start=0, pwm_end=100, min_bits=1.0) :
+    
+    def margin_entropy(pwm) :
+        pwm_section = pwm[:, pwm_start:pwm_end, :, :]
+        entropy = pwm_section * -K.log(K.clip(pwm_section, K.epsilon(), 1. - K.epsilon())) / K.log(2.0)
+        entropy = K.sum(entropy, axis=(2, 3))
+        conservation = 2.0 - entropy
+
+        mean_conservation = K.mean(conservation, axis=-1)
+
+        margin_entropy_cost = K.switch(mean_conservation < K.constant(min_bits, shape=(1,)), min_bits - mean_conservation, K.zeros_like(mean_conservation))
+    
+        return margin_entropy_cost
+
+    
+    return margin_entropy
+
 
 def get_punish_cse(pwm_start, pwm_end) :
     
@@ -48,6 +101,16 @@ def get_punish_c(pwm_start, pwm_end) :
         c_score = K.sum(pwm[..., pwm_start:pwm_end, 1, 0], axis=-1)
     
         return c_score
+    
+    return punish
+
+def get_punish_g(pwm_start, pwm_end) :
+    
+    def punish(pwm) :
+
+        g_score = K.sum(pwm[..., pwm_start:pwm_end, 2, 0], axis=-1)
+    
+        return g_score
     
     return punish
 
@@ -76,6 +139,16 @@ def get_reward_ggcc(pwm_start, pwm_end) :
     def reward(pwm) :
 
         ggcc_score = K.sum(pwm[..., pwm_start:pwm_end-3, 2, 0] * pwm[..., pwm_start+1:pwm_end-2, 2, 0] * pwm[..., pwm_start+2:pwm_end-1, 1, 0] * pwm[..., pwm_start+3:pwm_end, 1, 0], axis=-1)
+        
+        return -ggcc_score
+    
+    return reward
+
+def get_reward_gg_and_cc(pwm_start, pwm_end) :
+    
+    def reward(pwm) :
+
+        ggcc_score = K.sum(pwm[..., pwm_start:pwm_end-1, 2, 0] * pwm[..., pwm_start+1:pwm_end, 2, 0] * pwm[..., pwm_start:pwm_end-1, 1, 0] * pwm[..., pwm_start+1:pwm_end, 1, 0], axis=-1)
         
         return -ggcc_score
     
