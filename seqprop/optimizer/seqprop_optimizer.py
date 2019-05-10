@@ -124,6 +124,16 @@ def get_punish_aa(pwm_start, pwm_end) :
     
     return punish
 
+def get_punish_cc(pwm_start, pwm_end) :
+    
+    def punish(pwm) :
+
+        cc_score = K.sum(pwm[..., pwm_start:pwm_end-1, 1, 0] * pwm[..., pwm_start+1:pwm_end, 1, 0], axis=-1)
+    
+        return cc_score
+    
+    return punish
+
 def get_punish_gg(pwm_start, pwm_end) :
     
     def punish(pwm) :
