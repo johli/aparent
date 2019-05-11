@@ -28,6 +28,11 @@ Forward-engineering of new polyadenylation signals is done using the included Se
 [Notebook 3: CSE Hexamer Filter (Conv Layer 1)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layer_1_scaled_alien2_legacy.ipynb) <br/>
 [Notebook 4: Cleavage Motifs (Conv Layer 1)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layer_1_cleavage_alien1_memory_efficient_legacy.ipynb) <br/>
 
+## SeqProp APA Engineering Notebooks
+[Notebook 1: Target Isoform Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_isoform_optimization_legacy.ipynb)<br/>
+[Notebook 2: Target Cleavage Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_cleavage_optimization_legacy.ipynb)<br/>
+[Notebook 3: Dense Layer Sequence Visualization (DeepDream-Style)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_deepdream_optimization_legacy.ipynb)<br/>
+
 ## Designed MPRA Analysis Notebooks
 [Notebook 0a: Basic MPRA Library Statistics](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
 [Notebook 0b: MPRA LoFi vs. HiFi Replicates](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_designed_mpra_lofi_vs_hifi_legacy.ipynb)<br/>
