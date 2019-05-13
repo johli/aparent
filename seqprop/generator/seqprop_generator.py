@@ -16,30 +16,27 @@ import isolearn.keras as iso
 import numpy as np
 
 #Stochastic Binarized Neuron helper functions (Tensorflow)
+#ST Estimator code adopted from https://r2rt.com/beyond-binary-ternary-and-one-hot-neurons.html
+#See Github https://github.com/spitis/
 
 def st_sampled_softmax(logits):
-	"""Takes logits and samples a one-hot vector according to them, using the straight
-	through estimator on the backward pass."""
-	with ops.name_scope("STSampledSoftmax") as name:
-		probs = tf.nn.softmax(logits)
-		onehot_dims = logits.get_shape().as_list()[1]
-		res = tf.one_hot(tf.squeeze(tf.multinomial(logits, 1), 1), onehot_dims, 1.0, 0.0)
+	with ops.name_scope("STSampledSoftmax") as namescope :
+		nt_probs = tf.nn.softmax(logits)
+		onehot_dim = logits.get_shape().as_list()[1]
+		sampled_onehot = tf.one_hot(tf.squeeze(tf.multinomial(logits, 1), 1), onehot_dim, 1.0, 0.0)
 		with tf.get_default_graph().gradient_override_map({'Ceil': 'Identity', 'Mul': 'STMul'}):
-			return tf.ceil(res*probs)
+			return tf.ceil(sampled_onehot * nt_probs)
 
 def st_hardmax_softmax(logits):
-	"""Takes logits and creates a one-hot vector with a 1 in the position of the maximum
-	logit, using the straight through estimator on the backward pass."""
-	with ops.name_scope("STHardmaxSoftmax") as name:
-		probs = tf.nn.softmax(logits)
-		onehot_dims = logits.get_shape().as_list()[1]
-		res = tf.one_hot(tf.argmax(probs, 1), onehot_dims, 1.0, 0.0)
+	with ops.name_scope("STHardmaxSoftmax") as namescope :
+		nt_probs = tf.nn.softmax(logits)
+		onehot_dim = logits.get_shape().as_list()[1]
+		sampled_onehot = tf.one_hot(tf.argmax(nt_probs, 1), onehot_dim, 1.0, 0.0)
 		with tf.get_default_graph().gradient_override_map({'Ceil': 'Identity', 'Mul': 'STMul'}):
-			return tf.ceil(res*probs)
+			return tf.ceil(sampled_onehot * nt_probs)
 
 @ops.RegisterGradient("STMul")
 def st_mul(op, grad):
-	"""Straight-through replacement for Mul gradient (does not support broadcasting)."""
 	return [grad, grad]
 
 #PWM Masking and Sampling helper functions
