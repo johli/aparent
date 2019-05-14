@@ -14,6 +14,19 @@ __pycache__/
 *.bed
 *.fa
 
+# Keep the following latest-version models tracked in Git
+!saved_models/aparent_large_all_libs.h5
+!saved_models/aparent_large_lessdropout_all_libs_no_sampleweights.h5
+!saved_models/aparent_apadb_fitted_large_lessdropout_no_sampleweights.h5
+
+# Keep the following legacy-version models tracked in Git
+!saved_models/legacy_models/aparent_theano_legacy_30_31_34.h5
+!saved_models/legacy_models/aparent_theano_legacy_30_31_34_pasaligned.h5
+!saved_models/legacy_models/aparent_theano_legacy_30_31_34_padded.h5
+!saved_models/legacy_models/aparent_theano_legacy_30_31_34_pasaligned_padded.h5
+!saved_models/legacy_models/aparent_apadb_fitted_legacy_pasaligned_padded.h5
+
+
 .ipynb_checkpoints/
 model_checkpoints/
 
