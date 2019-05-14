@@ -30,7 +30,7 @@ def cut_normalizer(t) :
     
     return cuts
 
-def load_data(batch_size=32, valid_set_size=0.025, test_set_size=0.025, file_path='', data_version='', kept_libraries=None) :
+def load_data(batch_size=32, valid_set_size=0.025, test_set_size=0.025, file_path='', data_version='', kept_libraries=None, canonical_pas=False, no_dse_canonical_pas=False) :
 
     #Load plasmid data
     #plasmid_dict = pickle.load(open('apa_plasmid_data' + data_version + '.pickle', 'rb'))
@@ -42,6 +42,16 @@ def load_data(batch_size=32, valid_set_size=0.025, test_set_size=0.025, file_pat
     
     if kept_libraries is not None :
         keep_index = np.nonzero(plasmid_df.library_index.isin(kept_libraries))[0]
+        plasmid_df = plasmid_df.iloc[keep_index].copy()
+        plasmid_cuts = plasmid_cuts[keep_index, :]
+
+    if canonical_pas :
+        keep_index = np.nonzero(plasmid_df.seq.str.slice(70, 76) == 'AATAAA')[0]
+        plasmid_df = plasmid_df.iloc[keep_index].copy()
+        plasmid_cuts = plasmid_cuts[keep_index, :]
+
+    if no_dse_canonical_pas :
+        keep_index = np.nonzero(~plasmid_df.seq.str.slice(76).str.contains('AATAAA'))[0]
         plasmid_df = plasmid_df.iloc[keep_index].copy()
         plasmid_cuts = plasmid_cuts[keep_index, :]
     

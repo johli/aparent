@@ -3,7 +3,7 @@ import keras
 from keras.models import Sequential, Model, load_model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input, Lambda
 from keras.layers import Conv2D, MaxPooling2D, Conv1D, MaxPooling1D, LSTM, ConvLSTM2D, BatchNormalization
-from keras.layers import Merge, Concatenate, Reshape
+from keras.layers import Concatenate, Reshape
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras import regularizers
 from keras import backend as K
@@ -11,9 +11,9 @@ import keras.losses
 
 import tensorflow as tf
 
-import isolearn_keras as iso
+import isolearn.keras as iso
 
-from aparent_losses import *
+from aparent.losses import *
 
 def load_aparent_model(batch_size, use_sample_weights=False) :
     
