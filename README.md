@@ -91,7 +91,7 @@ The newest version of the data has been re-processed with the following addition
 *Note*: The "Processed Data Repository" also includes the Legacy data, but the data has been re-formatted such that it is easier to work with in Keras.
 
 ## Analysis
-The following collection of IPython Notebooks contains all of the analyses performed in the paper. To aid reproducibility, we have used the **Legacy** APARENT model and **Legacy** Data in all of the notebooks, not the newest (unpublished) version of APARENT.
+The following collection of IPython Notebooks contains all of the analyses performed in the paper. To aid reproducibility, we have used the **Legacy** APARENT model and **Legacy** Data in all of the notebooks.
 
 ### Random MPRA Linear Model Notebooks
 Log Odds Ratio Analysis of hexamers in the Random MPRA libraries and Linear Logistic Hexamer Regression.
@@ -114,7 +114,7 @@ Evaluation of APARENT on the Random MPRA libraries, and Convolutional Layer 1 & 
 [Notebook 4: Cleavage Motifs (Conv Layer 1)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_conv_layer_1_cleavage_alien1_memory_efficient_legacy.ipynb) <br/>
 
 ### SeqProp APA Engineering Notebooks
-Engineering (De-novo generation) of PAS sequences according to target isoform and cleavage objectives, and visualization of the Dense fully connected layer.
+Engineering of PAS sequences according to target isoform and cleavage objectives (and DeepDream).
 
 [Notebook 1: Target Isoform Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_isoform_optimization_legacy.ipynb)<br/>
 [Notebook 2: Target Cleavage Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_cleavage_optimization_legacy.ipynb)<br/>
