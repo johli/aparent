@@ -81,7 +81,7 @@ pair_gene_list = sorted(list(apadb_pair_df["gene"].unique()))
 
 #Load base APARENT model
 
-save_dir = os.path.join(os.getcwd(), '../aparent/saved_models')
+save_dir = os.path.join(os.getcwd(), '../saved_models')
 model_name = 'aparent_large_lessdropout_all_libs_no_sampleweights.h5'
 model_path = os.path.join(save_dir, model_name)
 
@@ -89,7 +89,7 @@ aparent_model = load_model(model_path)
 
 #Load APADB-tuned APARENT model
 
-save_dir = os.path.join(os.getcwd(), '../aparent/saved_models')
+save_dir = os.path.join(os.getcwd(), '../saved_models')
 model_name = 'aparent_apadb_fitted_large_lessdropout_no_sampleweights.h5'
 model_path = os.path.join(save_dir, model_name)
 

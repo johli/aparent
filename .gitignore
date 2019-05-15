@@ -26,6 +26,9 @@ __pycache__/
 !saved_models/legacy_models/aparent_theano_legacy_30_31_34_pasaligned_padded.h5
 !saved_models/legacy_models/aparent_apadb_fitted_legacy_pasaligned_padded.h5
 
+# Keep the following SNV measurement/prediction csvs
+!analysis/predictions/apa_variant_mpra_all_snvs.csv
+!analysis/predictions/apa_variant_mpra_clinvar_snvs.csv
 
 .ipynb_checkpoints/
 model_checkpoints/
