@@ -5,6 +5,10 @@ APARENT was trained on >3.5 million randomized 3' UTR polyadenylation signals ex
 
 Forward-engineering of new polyadenylation signals is done using the included SeqProp (Stochastic Sequence Backpropagation) software, which implements a gradient-based input maximization algorithm and uses APARENT as the predictor.
 
+## APARENT Example Usage Notebooks
+[Notebook 1: APA Isoform & Cleavage Prediction](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_isoform_prediction.ipynb)<br/>
+[Notebook 2: APA Variant Effect Prediction](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_variant_prediction.ipynb)<br/>
+
 ## Legacy Model & Code Availability
 [Legacy Code Repository](https://github.com/johli/aparent-legacy)<br/>
 
