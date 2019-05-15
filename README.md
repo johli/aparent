@@ -22,8 +22,8 @@ python setup.py install
 - [Optional] SeqProp >= 0.1 ([github](https://github.com/johli/seqprop.git))
 
 ### Usage
-APARENT is built as a Keras Model, and as such can be easily loaded and used to predict APA using Keras function calls.
-Please see the example usage notebooks provided below for an in-depth tutorial on how to use the model for APA- and Variant Effect prediction.
+APARENT is built as a Keras Model, and as such can be easily executed using simple Keras function calls.
+See the example usage notebooks provided below for a tutorial on how to use the model for APA- and Variant Effect prediction.
 
 This simple example illustrates how to predict the isoform abundance and cleavage profile of an input APA event:
 ```python
