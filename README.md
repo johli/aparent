@@ -78,7 +78,7 @@ The Legacy model was originally built and trained using Theano. Theano has since
 [Legacy Code Repository](https://github.com/johli/aparent-legacy)<br/>
 
 ## Data Availability
-The raw sequencing data for the Random 3' UTR MPRA and the Designed 3' UTR MPRA are found at GEO accession GSE113849.
+The raw sequencing data for the 3' UTR MPRA libraries are found at GEO accession GSE113849.
 
 The **Legacy** Data is the version of the processed data analyzed in the paper, which we provide here for reproducibility.
 The newest version of the data has been re-processed with the following additional improvements:
@@ -121,7 +121,7 @@ Engineering (De-novo generation) of PAS sequences according to target isoform an
 [Notebook 3: Dense Layer Sequence Visualization (DeepDream-Style)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_deepdream_optimization_legacy.ipynb)<br/>
 
 ### Designed MPRA Analysis Notebooks
-Analysis of the Designed MPRA library, including Forward-engineered PAS analysis, Native Human PAS prediction, and Variant effect prediction.
+Analysis of the Designed MPRA library, including Forward-engineering, Native PAS prediction, and Variant analysis.
 
 [Notebook 0a: Basic MPRA Library Statistics](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_designed_mpra_stats_legacy.ipynb)<br/>
 [Notebook 0b: MPRA LoFi vs. HiFi Replicates](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_aparent_designed_mpra_lofi_vs_hifi_legacy.ipynb)<br/>
@@ -150,9 +150,7 @@ Analysis of the Designed MPRA library, including Forward-engineered PAS analysis
 ### Native APA Analysis Notebooks
 Analysis of native human APA (**APADB** and **Leslie APA Atlas**), including cell-type specific APA prediction evaluation.
 
-Data sources:
-[APADB](http://tools.genxpro.net/apadb/download/)<br/>
-[Leslie](https://cbio.mskcc.org/leslielab/ApA/atlas/)<br/>
+Data sources: ([APADB](http://tools.genxpro.net/apadb/download/) | [Leslie](https://cbio.mskcc.org/leslielab/ApA/atlas/))<br/>
 
 [Notebook 0: Basic Data Statistics](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_leslie_apadb_celltypes_basic_stats_legacy.ipynb)<br/>
 [Notebook 1: Differential Usage Analysis](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/analysis/analyze_leslie_apadb_celltypes_differential_usage_legacy.ipynb)<br/>
