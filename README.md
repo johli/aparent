@@ -23,7 +23,7 @@ python setup.py install
 
 ### Usage
 APARENT is built as a Keras Model, and as such can be easily executed using simple Keras function calls.
-See the example usage notebooks provided below for a tutorial on how to use the model for APA- and Variant Effect prediction.
+See the example usage notebooks below for a tutorial on how to use the model for APA- and Variant Effect prediction.
 
 This simple example illustrates how to predict the isoform abundance and cleavage profile of an input APA event:
 ```python
