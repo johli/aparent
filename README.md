@@ -57,6 +57,12 @@ print("Predicted proximal vs. distal isoform % (APADB) = " + str(iso_pred[0, 0])
 ```
 
 ## APARENT Example Usage Notebooks
+These two notebooks illustrate how to use the APARENT Keras models to predict APA given a proximal and distal site, and to predict APA Variant effects, respectively. These are the two model versions we recommend using:
+**saved_models/aparent_large_lessdropout_all_libs_no_sampleweights.h5**
+> The base version of APARENT. Given an input sequence, predicts the (non-normalized) isoform abundance and cleavage distribution. It is *non-normalized* in the sense that predictions are not scaled w.r.t. a particular distal site, but rather the average distal bias of the training MPRA data. The main use case of this model is to predict the effect of variants, by calculating the odds ratio between variant and wildtype isoform predictions. *Note*: This model version is not the one evaluated in the paper; this version has been trained on all MPRA libraries (no libraries have been held out).
+**saved_models/aparent_apadb_fitted_large_lessdropout_no_sampleweights.h5**
+> A siamese APARENT network model, expecting both proximal and distal sequences as input. APARENT scores each site independently. The scores are weighted and combined with the log site distance, where the combination weights have been fitted on the Pooled-Tissue APADB data.
+
 [Notebook 1: APA Isoform & Cleavage Prediction](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_isoform_prediction.ipynb)<br/>
 [Notebook 2: APA Variant Effect Prediction](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_variant_prediction.ipynb)<br/>
 
