@@ -71,6 +71,10 @@ These two notebooks illustrate how to use the APARENT Keras models to predict AP
 *Note*: This model version is not the one evaluated in the paper; this version has been trained on all MPRA libraries (no libraries have been held out) in order to make the best APA predictor possible.
 
 ## Legacy Model & Code Availability
+The **Legacy** Model is the model version evaluated in the paper, which we provide here for the purpose of reproducibility. The model architecture itself has not changed since the Legacy version, but the newest version has been trained on all MPRA libraries. The Legacy models (base version and APADB-fitted version) are located in the *saved_models/legacy_models/*.
+
+The Legacy model was originally built and trained using Theano. Theano has since stopped being developed, so we have lifted the original model into Keras. The original Theano training code can be found in the below repository:
+
 [Legacy Code Repository](https://github.com/johli/aparent-legacy)<br/>
 
 ## Data Availability
