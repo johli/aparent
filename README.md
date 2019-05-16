@@ -1,4 +1,7 @@
 # APARENT - APA Regression Net
+
+![APARENT Logo](https://github.com/johli/aparent/blob/master/aparent_logo.jpg?raw=true)
+
 This repository contains the code for training and running APARENT, a deep neural network that can predict human 3' UTR Alternative Polyadenylation (APA), annotate genetic variants based on the impact of APA regulation, and engineer new polyadenylation signals according to target isoform abundances or cleavage profiles.
 
 APARENT was trained on >3.5 million randomized 3' UTR poly-A signals expressed on mini gene reporters in HEK293.
