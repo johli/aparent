@@ -9,6 +9,11 @@ Forward-engineering of new poly-A signals is done using the included SeqProp (St
 
 Further below on this page are links to IPython Notebooks containing all of the analyses performed in the paper. There is also a link to the repository containing all of the processed data used by the notebooks.
 
+### Web Prediction Tool
+We have hosted a publicly accessible web application where users can predict APA isoform abundance and variant effects with APARENT and visualize the results.
+
+The web prediction tool is located at [https://apa.cs.washington.edu/](https://apa.cs.washington.edu/).
+
 ### Installation
 APARENT can be installed by cloning or forking the [github repository](https://github.com/johli/aparent.git):
 ```sh
