@@ -123,9 +123,9 @@ Evaluation of APARENT on the Random MPRA libraries, and Convolutional Layer 1 & 
 ### SeqProp APA Engineering Notebooks
 Engineering of PAS sequences according to target isoform and cleavage objectives (and DeepDream).
 
-[Notebook 1: Target Isoform Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_isoform_optimization_legacy.ipynb)<br/>
-[Notebook 2: Target Cleavage Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_cleavage_optimization_legacy.ipynb)<br/>
-[Notebook 3: Dense Layer Sequence Visualization (DeepDream-Style)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_deepdream_optimization_legacy.ipynb)<br/>
+[Notebook 1: Target Isoform Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/misc/run_seqprop/seqprop_aparent_isoform_optimization_legacy.ipynb)<br/>
+[Notebook 2: Target Cleavage Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/misc/run_seqprop/seqprop_aparent_cleavage_optimization_legacy.ipynb)<br/>
+[Notebook 3: Dense Layer Sequence Visualization (DeepDream-Style)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/misc/run_seqprop/seqprop_aparent_deepdream_optimization_legacy.ipynb)<br/>
 
 ### Designed MPRA Analysis Notebooks
 Analysis of the Designed MPRA library, including Forward-engineering, Native PAS prediction, and Variant analysis.
