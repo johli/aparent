@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/css/bootstrap-select.min.css">
+
+    <style>
+
+        .active-bar {
+          stroke-dasharray: 5;
+        }
+
+        .active-tab {
+          fill: green;
+          stroke-dasharray: 5;
+        }
+
+        
+
+    </style>
+
+    <title>APARENT APA Isoform Prediction</title>
+  </head>
+  <body>
+  
+  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+    <h5 class="my-0 mr-md-auto font-weight-normal">APARENT APA Isoform Prediction</h5>
+    <nav class="my-2 my-md-0 mr-md-3">
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu">Home</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/mutagenesis">Mutagenesis</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/apa">APA Isoforms</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/pas">PAS Score</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/variant">Variants</a>
+    </nav>
+    <a class="btn btn-outline-primary" href="https://github.com/johli/aparent">GitHub</a>
+  </div>
+    
+
+
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+        <p class="lead">Predict the cut distribution and isoform proportion of two competing pA signals. The cut profiles are predicted by a siamese neural network and weighted according to a linear fit against human APA isoform proportions from APADB.</p>
+
+        <div class="alert alert-primary" role="alert">
+          See usage instructions below. Experiencing browser issues with the zoom function? Turn of zooming <a href="https://apa.cs.washington.edu/apa?zoom=false" class="alert-link">here</a>.
+        </div>
+
+        <div class="d-flex flex-row align-items-end">
+
+          <div class="p-2">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="database_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Database (PolyADB V3)
+              </button>
+              <div id='database_list' class="dropdown-menu" style="height:100px; overflow-y:auto;">
+                <a href='#' class='dropdown-item' id='apadb'>APADB V2</a>
+                <a href='#' class='dropdown-item' id='polyadb'>PolyADB V3</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2">
+            <!-- <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">Gene Symbol</span>
+              </div>
+              <input id="gene_symbol" type="text" class="form-control" value="PTEN">
+            </div> -->
+
+            <select id="gene_symbol" class="selectpicker" data-live-search="true" title="Find Gene Symbol">
+              <option data-tokens="PTEN">PTEN</option>
+            </select>
+          </div>
+
+          <!-- <div class="p-2"><button id="getsites_button" class="btn btn-success mb-2 float-right">Search</button></div> -->
+
+          <div class="p-2">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="apadb_list_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
+                APA Sites in Gene
+              </button>
+              <div id='apadb_list' class="dropdown-menu" style="height:400px; overflow-y:auto;">
+              </div>
+            </div>
+          </div>
+          <div class="p-2">
+                <h5 id='chosen_gene'></h5>
+          </div>
+        </div>
+
+        <h3 id='chosen_site_prox'></h3>
+
+        <div class="d-flex flex-row align-items-end">
+          <div class="p-2">
+            <button id="moveleft_prox_button" class="btn btn-outline-primary mb-2 float-right">&lt;</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomin_prox_button" class="btn btn-outline-primary mb-2 float-right">Zoom In</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomout_prox_button" class="btn btn-outline-primary mb-2 float-right">Zoom Out</button>
+          </div>
+          <div class="p-2">
+            <button id="moveright_prox_button" class="btn btn-outline-primary mb-2 float-right">&gt;</button>
+          </div>
+          <div class="p-2">
+            <p id='chosen_site_prox_details'></p>
+          </div>
+        </div>
+
+        <svg id='cuts_prox_svg' width='1200' height='200'></svg>
+        <br/>
+        <div style="width: 1200px">
+            
+            
+            <div class="d-flex flex-row-reverse">
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Isoform end</span>
+                  </div>
+                  <input id="prox_cut_end" type="text" class="form-control border-primary" value="110">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Isoform start</span>
+                  </div>
+                  <input id="prox_cut_start" type="text" class="form-control border-primary" value="80">
+                </div>
+              </div>
+              <div class="p-2">
+                <h2 id='prox_usage'></h2>
+              </div>
+            </div>
+            
+            <textarea class="form-control border-primary" id="seq_prox" rows="3"></textarea>
+        </div>
+        <br/>
+        <h3 id='chosen_site_dist'></h3>
+        
+        <div class="d-flex flex-row align-items-end">
+          <div class="p-2">
+            <button id="moveleft_dist_button" class="btn btn-outline-primary mb-2 float-right">&lt;</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomin_dist_button" class="btn btn-outline-primary mb-2 float-right">Zoom In</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomout_dist_button" class="btn btn-outline-primary mb-2 float-right">Zoom Out</button>
+          </div>
+          <div class="p-2">
+            <button id="moveright_dist_button" class="btn btn-outline-primary mb-2 float-right">&gt;</button>
+          </div>
+          <div class="p-2">
+            <p id='chosen_site_dist_details'></p>
+          </div>
+        </div>
+
+        <svg id='cuts_dist_svg' width='1200' height='200'></svg>
+        <br/>
+        <div style="width: 1200px">
+            
+            
+            <div class="d-flex flex-row-reverse">
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Isoform end</span>
+                  </div>
+                  <input id="dist_cut_end" type="text" class="form-control border-primary" value="110">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Isoform start</span>
+                  </div>
+                  <input id="dist_cut_start" type="text" class="form-control border-primary" value="80">
+                </div>
+              </div>
+              <div class="p-2">
+                <h2 id='dist_usage'></h2>
+              </div>
+            </div>
+
+            <textarea class="form-control border-primary" id="seq_dist" rows="3"></textarea>
+            <br/>
+            <div class="d-flex flex-row-reverse">
+              <div class="p-2"><button id="predict_button" class="btn btn-success mb-2 float-right">Predict</button></div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">Site Distance</span>
+                  </div>
+                  <input id="site_distance" type="text" class="form-control border-primary" value="200">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="form-group form-check">
+                  <input id='normalize_cuts' type="checkbox" checked="true" class="form-check-input">
+                  <label class="form-check-label" for="normalize_cuts">Normalize cuts</label>
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <div class="card border-primary" style="width: 1200px">
+          <div class="card-body">
+            <row>
+              <h5 class="card-title text-primary">Legend</h5>
+              <button id="toggle_legend_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_legend" aria-expanded="false" aria-controls="toggle_legend">Show / Hide</button>
+              <h6 class="card-subtitle mb-2 text-muted">APA Isoform Prediction</h6>
+              <p class="card-text">Explanation of values, fields and graphics presented in the tool.</p>
+
+              <div class="collapse" id="toggle_legend">
+                <ul class="list">
+                  <li class="list-item">
+                    <b>Cleavage %</b><br/>
+                    The 3' cleavage distribution of each PAS is shown as a blue bar chart. The values (Cleavage %) are by default normalized (they sum to 100%).
+                  </li>
+                  <li class="list-item">
+                    <b>Isoform Window</b><br/>
+                    The window frame shown on top of the cleavage distribution defines what cleavage positions define the isoform of interest. All isoform metrics are calculated by aggregating the cleavage within this window.
+                  </li>
+                  <li class="list-item">
+                    <b>Isoform %</b><br/>
+                    The Proximal or Distal APA Isoform Abundance (as percentage).
+                  </li>
+                </ul>
+              </div>
+            </row>
+            <row>
+              <h5 class="card-title text-primary">Instructions</h5>
+              <button id="toggle_instructions_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_instructions" aria-expanded="false" aria-controls="toggle_instructions">Show / Hide</button>
+              <p class="card-text">Instructions on how to use the tool.</p>
+
+              <div class="collapse" id="toggle_instructions">
+                <ul class="list">
+                  <li class="list-item">
+                    <b>Choose gene and APA sites</b><br/>
+                    Select the gene of interest in the dropdown list above the cleavage curve. Choosing a gene populates the dropdown to the right with the annotated adjacent APA sites of that gene. We currently provide integration with APADB (V2) and PolyADB (V3).
+                  </li>
+                  <li class="list-item">
+                    <b>(Optional) Specify custom pA sequences</b><br/>
+                    Instead of choosing from a list of native human pA sites, you can paste your own custom pA sequences in the text areas. </b>Note:</b> The sequences must be 205 nucleotides.
+                  </li>
+                  <li class="list-item">
+                    <b>Define isoform window</b><br/>
+                    Drag the tabs of the isoform window over the region of the cleavage distribution according to what pA positions you wish to include in the isoform of interest.
+                  </li>
+                  <li class="list-item">
+                    <b>Zoom and pan the sequence</b><br/>
+                    Zoom and pan into specific regions of the sequence by pressing the zoom buttons above the cleavage curve, or simply by scrolling and dragging with the mouse over the cleavage curves.
+                  </li>
+                </ul>
+              </div>
+            </row>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="my-5 pt-5 text-muted text-center text-small">
+    <p class="mb-1">Seelig Lab</p>
+    <a href="https://www.seeliglab.org/">Website</a> | jlinder2 (at) cs.washington.edu
+  </footer>
+
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/js/bootstrap-select.min.js"></script>
+
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.js"></script>
+
+
+    <script>
+
+    //AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT
+
+    //var socket = new WebSocket("ws://127.0.0.1:9990");
+
+    /*socket.addEventListener('open', function (event) {
+        socket.send("apadb_AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT_80_110_AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT_80_110_200");
+    });*/
+
+    /*d3.select('#getsites_button')
+            .on('click', function () {
+                gene = $('#gene_symbol').val();
+
+                socket.send("getsites_" + gene);
+
+            });*/
+
+
+      database_id = "polyadb";
+      $('#database_list a').click(function() {
+        database_id = this.id;
+        $('#database_button').html("Database (" + this.innerHTML + ")");
+
+        $.ajax({
+          url: "https://apa.cs.washington.edu/api/pairgenes/PTEN" + "?database=" + database_id,
+          type: 'GET',
+          dataType: 'json',
+          success: get_pairsites
+        });
+
+        //socket.send("getseq_PTEN.28");
+        $.ajax({
+          url: "https://apa.cs.washington.edu/api/pairsites/PTEN.1" + "?database=" + database_id,
+          type: 'GET',
+          dataType: 'json',
+          success: get_pairsite
+        });
+
+        //Populate gene symbol dropdown
+        //socket.send("getgenes");
+        $.ajax({
+          url: "https://apa.cs.washington.edu/api/pairgenes" + "?database=" + database_id,
+          type: 'GET',
+          dataType: 'json',
+          success: get_pairgenes
+        });
+
+        $('#apadb_list_button').text("APA Sites in Gene");
+        $('#apadb_list_button').prop( "disabled", true );
+
+        $('#chosen_gene').text("PTEN");
+
+      });
+
+    //socket.onmessage = function(message) {
+
+      function get_pairsites(message_json) {
+      //message_json = JSON.parse(message.data);
+
+      //if (message_json["return_action"] === "getsites") {
+
+
+        gene = $('#gene_symbol').val();
+
+        $('#apadb_list').html("");
+        var dropdown = $('#apadb_list');
+
+        for(var i = 0; i < message_json["gene_id"].length; i++) {
+          var option = document.createElement('a');
+          
+          site_type_prox = message_json["site_type_prox"][i]
+          site_type_dist = message_json["site_type_dist"][i]
+          if(site_type_prox === 'Extension') {
+            site_type_prox = 'UTR3'
+          }
+          if(site_type_dist === 'Extension') {
+            site_type_dist = 'UTR3'
+          }
+
+          option.innerHTML = "PAS " + message_json["sitenum_prox"][i] + " (" + site_type_prox + ") vs. " + message_json["sitenum_dist"][i] + " (" + site_type_dist + ")";
+          option.href = "#" + message_json["gene_id"][i];
+          option.id = message_json["gene_id"][i];
+
+          //option.class = "dropdown-item";
+          option.classList.add('dropdown-item');
+
+          dropdown.append(option);
+        }
+        $('#apadb_list a').click(function() {
+            gene_id = this.id;
+            //socket.send("getseqs_" + gene_id);
+            $.ajax({
+              url: "https://apa.cs.washington.edu/api/pairsites/" + gene_id + "?database=" + database_id,
+              type: 'GET',
+              dataType: 'json',
+              success: get_pairsite
+            });
+        });
+
+        $('#apadb_list_button').prop( "disabled", false );
+
+      }
+
+      function get_pairgenes(message_json) {
+
+        $('#gene_symbol option').remove();
+
+        for(var i = 0; i < message_json["genes"].length; i++) {
+          var option = document.createElement('option');
+          
+          option.innerHTML = message_json["genes"][i];
+          $('#option').attr("data-tokens", message_json["genes"][i])
+
+          $('#gene_symbol').append(option);
+        }
+
+        $('#gene_symbol').selectpicker('refresh');
+        
+
+
+      }
+
+      function get_pairsite(message_json) {
+        $('#seq_prox').val(message_json["seq_prox"]);
+        $('#prox_cut_start').val(77);
+        $('#prox_cut_end').val(115);
+
+        $('#seq_dist').val(message_json["seq_dist"]);
+        $('#dist_cut_start').val(77);
+        $('#dist_cut_end').val(115);
+
+        $('#site_distance').val(message_json["site_distance"]);
+
+        chrom = message_json["chrom"]
+        pas_pos_prox = message_json["pas_pos_coord_prox"]
+        pas_pos_dist = message_json["pas_pos_coord_dist"]
+        strand = message_json["strand"]
+        native_usage = message_json["native_usage"]
+
+        $('#chosen_gene').text(message_json["gene"] + " PAS " + message_json["sitenum_prox"] + " vs. " + message_json["sitenum_dist"]);
+
+        $('#chosen_site_prox').text(message_json["gene"] + " PAS " + message_json["sitenum_prox"] + " (" + message_json["site_type_prox"] + ") ");
+        //$('#chosen_site_prox_details').text("Observed polyA in region " + message_json["chrom"] + ":" + message_json["cut_start_coord_prox"] + "-" + message_json["cut_end_coord_prox"] + ":" + message_json["strand"]);
+        $('#chosen_site_prox_details').text("CSE Hexamer located at " + chrom + ":" + pas_pos_prox + ":" + strand);
+
+        $('#chosen_site_dist').text(message_json["gene"] + " PAS " + message_json["sitenum_dist"] + " (" + message_json["site_type_dist"] + ") ");
+        //$('#chosen_site_dist_details').text("Observed polyA in region " + message_json["chrom"] + ":" + message_json["cut_start_coord_dist"] + "-" + message_json["cut_end_coord_dist"] + ":" + message_json["strand"]);
+        $('#chosen_site_dist_details').text("CSE Hexamer located at " + chrom + ":" + pas_pos_dist + ":" + strand);
+
+        $('#predict_button').click()
+
+      }
+
+      x_prox = null;
+      orig_x_prox = null;
+      x_dist = null;
+      orig_x_dist = null;
+
+      trans_k_prox = 1;
+      trans_k_dist = 1;
+
+      function get_apadb(message_json) {
+
+
+        seq_prox = $('#seq_prox').val();
+        prox_cut_start = $('#prox_cut_start').val();
+        prox_cut_end = $('#prox_cut_end').val();
+
+        seq_dist = $('#seq_dist').val();
+        dist_cut_start = $('#dist_cut_start').val();
+        dist_cut_end = $('#dist_cut_end').val();
+
+        norm_cuts = $('#normalize_cuts')[0].checked;
+
+        //d3.select("svg").remove();
+        d3.selectAll("svg > *").remove();
+
+        prox_usage = +message_json['iso'] * 100;
+        prox_usage = Math.round(prox_usage * 1000) / 1000;
+        $('#prox_usage').text('Proximal Isoform = ' + prox_usage + "%");
+        dist_usage = 100 - (+message_json['iso'] * 100);
+        dist_usage = Math.round(dist_usage * 1000) / 1000;
+        $('#dist_usage').text('Distal Isoform = ' + dist_usage + "%");
+
+        data_cut_prox = []
+        for(let i = 0; i < 205; i++) {
+          if(norm_cuts === true) {
+            data_cut_prox.push({ name: i, value: +message_json['cut_prox'][i] * +message_json['iso'], nt: seq_prox[i] });
+          }
+          else {
+            data_cut_prox.push({ name: i, value: +message_json['cut_prox'][i], nt: seq_prox[i] });
+          }
+        }
+        data_cut_dist = []
+        for(let i = 0; i < 205; i++) {
+          if(norm_cuts === true) {
+            data_cut_dist.push({ name: i, value: +message_json['cut_dist'][i] * (1 - +message_json['iso']), nt: seq_dist[i] });
+          }
+          else {
+            data_cut_dist.push({ name: i, value: +message_json['cut_dist'][i], nt: seq_dist[i] });
+          }
+        }
+
+        margin = ({top: 20, right: 0, bottom: 30, left: 40});
+
+        //Prox cuts
+        width = $('#cuts_prox_svg').attr('width');
+        height = $('#cuts_prox_svg').attr('height');
+
+
+        y_prox = d3.scaleLinear()
+            .domain([0, d3.max(data_cut_prox, d => d.value)]).nice()
+            .range([height - margin.bottom, margin.top]);
+
+        if (x_prox == null) {
+          x_prox = d3.scaleLinear()
+              .domain([0, 205])//.nice()
+              .range([margin.left, width - margin.right]);
+
+          orig_x_prox = x_prox;
+
+          x_prox.bandwidthh = function() { return (width - margin.right - margin.left) / 205; };
+        }
+
+        yAxis_prox = g => g
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y_prox))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.select(".tick:last-of-type text").clone()
+                .attr("x", 4)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("Cleavage %"));
+
+        xAxis_prox_axis = d3.axisBottom(x_prox).tickValues(data_cut_prox.map(d => d.name + 0.5)).tickFormat(function(d,i){ return seq_prox[i] });
+
+        xAxis_prox = g => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis_prox_axis);
+
+        d3.select('#cuts_prox_svg')
+            .append("g")
+            .attr("fill", "steelblue")
+            .selectAll("rect")
+            .data(data_cut_prox)
+            .join("rect")
+              .attr("id", d => "cut_bar_prox_" + d.name)
+              .attr("x", d => x_prox(d.name))
+              .attr("y", d => y_prox(d.value))
+              .attr("height", d => y_prox(0) - y_prox(d.value))
+              .attr("width", d => x_prox.bandwidthh())
+              .attr("stroke-width", 1)
+              .attr("stroke", "black")
+              .text(d =>  d.nt);
+
+        var gX_prox = d3.select('#cuts_prox_svg')
+            .append("g")
+            .call(xAxis_prox)
+
+        d3.select('#cuts_prox_svg')
+          .append("line")
+          .attr("id", "cutbar_left_prox")
+          .attr("x1", x_prox(prox_cut_start))
+          .attr("y1", y_prox(0))
+          .attr("x2", x_prox(prox_cut_start))
+          .attr("y2", y_prox(d3.max(data_cut_prox, d => 1.02 * d.value)))
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .call(d3.drag()
+          .on("start", dragstartedbar_prox)
+          .on("drag", draggedleftbar_prox)
+          .on("end", dragendedleftbar_prox));
+
+        d3.select('#cuts_prox_svg')
+          .append("rect")
+          .attr("id", "cuttab_left_prox")
+          .attr("fill", "darkgreen")
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .attr("x", x_prox(prox_cut_start) - 10)
+          .attr("y", (y_prox(0) + y_prox(d3.max(data_cut_prox, d => 1.02 * d.value))) / 2 - 15)
+          .attr("height", 30)
+          .attr("width", 10)
+          .attr("rx", 2)
+          .call(d3.drag()
+          .on("start", dragstartedtab_prox)
+          .on("drag", draggedlefttab_prox)
+          .on("end", dragendedtableft_prox));
+
+        d3.select('#cuts_prox_svg')
+          .append("line")
+          .attr("id", "cutbar_right_prox")
+          .attr("x1", x_prox(prox_cut_end))
+          .attr("y1", y_prox(0))
+          .attr("x2", x_prox(prox_cut_end))
+          .attr("y2", y_prox(d3.max(data_cut_prox, d => 1.02 * d.value)))
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .call(d3.drag()
+          .on("start", dragstartedbar_prox)
+          .on("drag", draggedrightbar_prox)
+          .on("end", dragendedrightbar_prox));
+
+        d3.select('#cuts_prox_svg')
+          .append("rect")
+          .attr("id", "cuttab_right_prox")
+          .attr("fill", "darkgreen")
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .attr("x", x_prox(prox_cut_end))
+          .attr("y", (y_prox(0) + y_prox(d3.max(data_cut_prox, d => 1.02 * d.value))) / 2 - 15)
+          .attr("height", 30)
+          .attr("width", 10)
+          .attr("rx", 2)
+          .call(d3.drag()
+          .on("start", dragstartedtab_prox)
+          .on("drag", draggedrighttab_prox)
+          .on("end", dragendedtabright_prox));
+
+        d3.select('#cuts_prox_svg')
+          .append("line")
+          .attr("id", "cutbar_top_prox")
+          .attr("x1", x_prox(prox_cut_start))
+          .attr("y1", y_prox(d3.max(data_cut_prox, d => 1.02 * d.value)))
+          .attr("x2", x_prox(prox_cut_end))
+          .attr("y2", y_prox(d3.max(data_cut_prox, d => 1.02 * d.value)))
+          .attr("stroke-width", 2)
+          .attr("stroke", "black");
+
+        d3.select('#cuts_prox_svg')
+            .append("rect")
+            .attr("id", "cuts_white_bg_left_prox")
+            .attr("fill", "white")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", margin.left);
+            
+        var gY_prox = d3.select('#cuts_prox_svg')
+            .append("g")
+            .call(yAxis_prox);
+
+
+        if (x_prox.bandwidthh() < 9) {
+          gX_prox.style("font", "10px sans-serif");
+        } else if (x_prox.bandwidthh() >= 9 && x_prox.bandwidthh() < 11) {
+          gX_prox.style("font", "12px sans-serif");
+        } else if (x_prox.bandwidthh() >= 11 && x_prox.bandwidthh() < 13) {
+          gX_prox.style("font", "14px sans-serif");
+        } else if (x_prox.bandwidthh() >= 13 && x_prox.bandwidthh() < 15) {
+          gX_prox.style("font", "16px sans-serif");
+        } else if (x_prox.bandwidthh() >= 15 && x_prox.bandwidthh() < 17) {
+          gX_prox.style("font", "18px sans-serif");
+        } else if (x_prox.bandwidthh() >= 17) {
+          gX_prox.style("font", "20px sans-serif");
+        }
+
+
+
+        function dragstartedbar_prox(d) {
+          d3.select('#cutbar_left_prox').raise().classed("active-bar", true);
+          d3.select('#cutbar_top_prox').raise().classed("active-bar", true);
+          d3.select('#cutbar_right_prox').raise().classed("active-bar", true);
+        }
+
+        function draggedleftbar_prox(d) {
+          d3.select('#cutbar_left_prox').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top_prox').attr("x1", d3.event.x);
+          d3.select('#cuttab_left_prox').attr("x", d3.event.x - 10);
+        }
+
+        function draggedrightbar_prox(d) {
+          d3.select('#cutbar_right_prox').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top_prox').attr("x2", d3.event.x);
+          d3.select('#cuttab_right_prox').attr("x", d3.event.x);
+        }
+
+        function dragendedleftbar_prox(d) {
+          d3.select('#cutbar_left_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_prox').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_left_prox').attr("x1", x_prox(Math.round(x_prox.invert(d3.event.x)))).attr("x2", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cutbar_top_prox').attr("x1", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cuttab_left_prox').attr("x", x_prox(Math.round(x_prox.invert(d3.event.x))) - 10);
+
+          $('#prox_cut_start').val(Math.round(x_prox.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        function dragendedrightbar_prox(d) {
+          d3.select('#cutbar_left_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_prox').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_right_prox').attr("x1", x_prox(Math.round(x_prox.invert(d3.event.x)))).attr("x2", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cutbar_top_prox').attr("x2", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cuttab_right_prox').attr("x", x_prox(Math.round(x_prox.invert(d3.event.x))));
+
+          $('#prox_cut_end').val(Math.round(x_prox.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+
+        function dragstartedtab_prox(d) {
+          d3.select(this).raise().classed("active-tab", true);
+          d3.select('#cutbar_left_prox').raise().classed("active-bar", true);
+          d3.select('#cutbar_top_prox').raise().classed("active-bar", true);
+          d3.select('#cutbar_right_prox').raise().classed("active-bar", true);
+        }
+
+        function draggedlefttab_prox(d) {
+          d3.select('#cutbar_left_prox').attr("x1", d3.event.x + 10).attr("x2", d3.event.x + 10);
+          d3.select('#cutbar_top_prox').attr("x1", d3.event.x + 10);
+          d3.select('#cuttab_left_prox').attr("x", d3.event.x);
+        }
+
+        function draggedrighttab_prox(d) {
+          d3.select('#cutbar_right_prox').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top_prox').attr("x2", d3.event.x);
+          d3.select('#cuttab_right_prox').attr("x", d3.event.x);
+        }
+
+        function dragendedtableft_prox(d) {
+          d3.select(this).classed("active-tab", false);
+          d3.select('#cutbar_left_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_prox').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_left_prox').attr("x1", x_prox(Math.round(x_prox.invert(d3.event.x)))).attr("x2", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cutbar_top_prox').attr("x1", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cuttab_left_prox').attr("x", x_prox(Math.round(x_prox.invert(d3.event.x))) - 10);
+
+          $('#prox_cut_start').val(Math.round(x_prox.invert(d3.event.x + 10)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        function dragendedtabright_prox(d) {
+          d3.select(this).classed("active-tab", false);
+          d3.select('#cutbar_left_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_prox').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_prox').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_right_prox').attr("x1", x_prox(Math.round(x_prox.invert(d3.event.x)))).attr("x2", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cutbar_top_prox').attr("x2", x_prox(Math.round(x_prox.invert(d3.event.x))));
+          d3.select('#cuttab_right_prox').attr("x", x_prox(Math.round(x_prox.invert(d3.event.x))));
+
+          $('#prox_cut_end').val(Math.round(x_prox.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        var zoom_prox = d3.zoom()
+          .scaleExtent([1, 10])
+          .translateExtent([[margin.left, 0], [width - margin.right, height]])
+          .extent([[margin.left, 0], [width - margin.right, height]])
+          .on("zoom", zoomed_prox);
+
+        
+
+        function zoomed_prox() {
+          
+          x_prox = d3.event.transform.rescaleX(orig_x_prox);
+
+          trans_k_prox = 1;
+          if (trans_k_prox != null) {
+            trans_k_prox = d3.event.transform.k;
+          }
+
+          x_prox.bandwidthh = function() { return ((width - margin.right - margin.left) / 205) * trans_k_prox; };
+
+          gX_prox.call(xAxis_prox_axis.scale(x_prox));
+
+          
+
+          if (x_prox.bandwidthh() < 9) {
+            gX_prox.style("font", "10px sans-serif");
+          } else if (x_prox.bandwidthh() >= 9 && x_prox.bandwidthh() < 11) {
+            gX_prox.style("font", "12px sans-serif");
+          } else if (x_prox.bandwidthh() >= 11 && x_prox.bandwidthh() < 13) {
+            gX_prox.style("font", "14px sans-serif");
+          } else if (x_prox.bandwidthh() >= 13 && x_prox.bandwidthh() < 15) {
+            gX_prox.style("font", "16px sans-serif");
+          } else if (x_prox.bandwidthh() >= 15 && x_prox.bandwidthh() < 17) {
+            gX_prox.style("font", "18px sans-serif");
+          } else if (x_prox.bandwidthh() >= 17) {
+            gX_prox.style("font", "20px sans-serif");
+          }
+
+          for(let i = 0; i < 205; i++) {
+            d3.select("#cut_bar_prox_" + i).attr("x", x_prox(i)).attr("width", x_prox.bandwidthh());
+          }
+
+
+          d3.select('#cutbar_left_prox').attr("x1", x_prox(prox_cut_start)).attr("x2", x_prox(prox_cut_start));
+          d3.select('#cuttab_left_prox').attr("x", x_prox(prox_cut_start) - 10);
+          d3.select('#cutbar_right_prox').attr("x1", x_prox(prox_cut_end)).attr("x2", x_prox(prox_cut_end));
+          d3.select('#cuttab_right_prox').attr("x", x_prox(prox_cut_end));
+          d3.select('#cutbar_top_prox').attr("x1", x_prox(prox_cut_start)).attr("x2", x_prox(prox_cut_end));
+
+        }
+
+        d3.select('#cuts_prox_svg').call(zoom_prox);
+
+
+        function zoom_in_prox() {
+          d3.select('#cuts_prox_svg').call(zoom_prox.scaleBy, 2);
+        }
+
+        function zoom_out_prox() {
+          d3.select('#cuts_prox_svg').call(zoom_prox.scaleBy, 0.5);
+        }
+
+        function move_left_prox() {
+          d3.select('#cuts_prox_svg').call(zoom_prox.translateBy, 50);
+        }
+
+        function move_right_prox() {
+          d3.select('#cuts_prox_svg').call(zoom_prox.translateBy, -50);
+        }
+
+        d3.select('#zoomin_prox_button').on('click', zoom_in_prox)
+        d3.select('#zoomout_prox_button').on('click', zoom_out_prox)
+        d3.select('#moveleft_prox_button').on('click', move_left_prox)
+        d3.select('#moveright_prox_button').on('click', move_right_prox)
+
+        
+
+        //Dist cuts
+        width = $('#cuts_dist_svg').attr('width');
+        height = $('#cuts_dist_svg').attr('height');
+
+
+        y_dist = d3.scaleLinear()
+            .domain([0, d3.max(data_cut_dist, d => d.value)]).nice()
+            .range([height - margin.bottom, margin.top]);
+
+        if (x_dist == null) {
+          x_dist = d3.scaleLinear()
+              .domain([0, 205])//.nice()
+              .range([margin.left, width - margin.right]);
+
+          orig_x_dist = x_dist;
+
+          x_dist.bandwidthh = function() { return (width - margin.right - margin.left) / 205; };
+        }
+
+        yAxis_dist = g => g
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y_dist))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.select(".tick:last-of-type text").clone()
+                .attr("x", 4)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("Cleavage %"));
+
+        xAxis_dist_axis = d3.axisBottom(x_dist).tickValues(data_cut_dist.map(d => d.name + 0.5)).tickFormat(function(d,i){ return seq_dist[i] });
+
+        xAxis_dist = g => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis_dist_axis);
+
+        d3.select('#cuts_dist_svg')
+            .append("g")
+            .attr("fill", "steelblue")
+            .selectAll("rect")
+            .data(data_cut_dist)
+            .join("rect")
+              .attr("id", d => "cut_bar_dist_" + d.name)
+              .attr("x", d => x_dist(d.name))
+              .attr("y", d => y_dist(d.value))
+              .attr("height", d => y_dist(0) - y_dist(d.value))
+              .attr("width", d => x_dist.bandwidthh())
+              .attr("stroke-width", 1)
+              .attr("stroke", "black")
+              .text(d =>  d.nt);
+
+        var gX_dist = d3.select('#cuts_dist_svg')
+            .append("g")
+            .call(xAxis_dist)
+
+        d3.select('#cuts_dist_svg')
+          .append("line")
+          .attr("id", "cutbar_left_dist")
+          .attr("x1", x_dist(dist_cut_start))
+          .attr("y1", y_dist(0))
+          .attr("x2", x_dist(dist_cut_start))
+          .attr("y2", y_dist(d3.max(data_cut_dist, d => 1.02 * d.value)))
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .call(d3.drag()
+          .on("start", dragstartedbar_dist)
+          .on("drag", draggedleftbar_dist)
+          .on("end", dragendedleftbar_dist));
+
+        d3.select('#cuts_dist_svg')
+          .append("rect")
+          .attr("id", "cuttab_left_dist")
+          .attr("fill", "darkgreen")
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .attr("x", x_dist(dist_cut_start) - 10)
+          .attr("y", (y_dist(0) + y_dist(d3.max(data_cut_dist, d => 1.02 * d.value))) / 2 - 15)
+          .attr("height", 30)
+          .attr("width", 10)
+          .attr("rx", 2)
+          .call(d3.drag()
+          .on("start", dragstartedtab_dist)
+          .on("drag", draggedlefttab_dist)
+          .on("end", dragendedtableft_dist));
+
+        d3.select('#cuts_dist_svg')
+          .append("line")
+          .attr("id", "cutbar_right_dist")
+          .attr("x1", x_dist(dist_cut_end))
+          .attr("y1", y_dist(0))
+          .attr("x2", x_dist(dist_cut_end))
+          .attr("y2", y_dist(d3.max(data_cut_dist, d => 1.02 * d.value)))
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .call(d3.drag()
+          .on("start", dragstartedbar_dist)
+          .on("drag", draggedrightbar_dist)
+          .on("end", dragendedrightbar_dist));
+
+        d3.select('#cuts_dist_svg')
+          .append("rect")
+          .attr("id", "cuttab_right_dist")
+          .attr("fill", "darkgreen")
+          .attr("stroke-width", 2)
+          .attr("stroke", "black")
+          .attr("x", x_dist(dist_cut_end))
+          .attr("y", (y_dist(0) + y_dist(d3.max(data_cut_dist, d => 1.02 * d.value))) / 2 - 15)
+          .attr("height", 30)
+          .attr("width", 10)
+          .attr("rx", 2)
+          .call(d3.drag()
+          .on("start", dragstartedtab_dist)
+          .on("drag", draggedrighttab_dist)
+          .on("end", dragendedtabright_dist));
+
+        d3.select('#cuts_dist_svg')
+          .append("line")
+          .attr("id", "cutbar_top_dist")
+          .attr("x1", x_dist(dist_cut_start))
+          .attr("y1", y_dist(d3.max(data_cut_dist, d => 1.02 * d.value)))
+          .attr("x2", x_dist(dist_cut_end))
+          .attr("y2", y_dist(d3.max(data_cut_dist, d => 1.02 * d.value)))
+          .attr("stroke-width", 2)
+          .attr("stroke", "black");
+
+        d3.select('#cuts_dist_svg')
+            .append("rect")
+            .attr("id", "cuts_white_bg_left_dist")
+            .attr("fill", "white")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", margin.left);
+            
+        var gY_dist = d3.select('#cuts_dist_svg')
+            .append("g")
+            .call(yAxis_dist);
+
+
+        if (x_dist.bandwidthh() < 9) {
+          gX_dist.style("font", "10px sans-serif");
+        } else if (x_dist.bandwidthh() >= 9 && x_dist.bandwidthh() < 11) {
+          gX_dist.style("font", "12px sans-serif");
+        } else if (x_dist.bandwidthh() >= 11 && x_dist.bandwidthh() < 13) {
+          gX_dist.style("font", "14px sans-serif");
+        } else if (x_dist.bandwidthh() >= 13 && x_dist.bandwidthh() < 15) {
+          gX_dist.style("font", "16px sans-serif");
+        } else if (x_dist.bandwidthh() >= 15 && x_dist.bandwidthh() < 17) {
+          gX_dist.style("font", "18px sans-serif");
+        } else if (x_dist.bandwidthh() >= 17) {
+          gX_dist.style("font", "20px sans-serif");
+        }
+
+
+
+        function dragstartedbar_dist(d) {
+          d3.select('#cutbar_left_dist').raise().classed("active-bar", true);
+          d3.select('#cutbar_top_dist').raise().classed("active-bar", true);
+          d3.select('#cutbar_right_dist').raise().classed("active-bar", true);
+        }
+
+        function draggedleftbar_dist(d) {
+          d3.select('#cutbar_left_dist').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top_dist').attr("x1", d3.event.x);
+          d3.select('#cuttab_left_dist').attr("x", d3.event.x - 10);
+        }
+
+        function draggedrightbar_dist(d) {
+          d3.select('#cutbar_right_dist').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top_dist').attr("x2", d3.event.x);
+          d3.select('#cuttab_right_dist').attr("x", d3.event.x);
+        }
+
+        function dragendedleftbar_dist(d) {
+          d3.select('#cutbar_left_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_dist').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_left_dist').attr("x1", x_dist(Math.round(x_dist.invert(d3.event.x)))).attr("x2", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cutbar_top_dist').attr("x1", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cuttab_left_dist').attr("x", x_dist(Math.round(x_dist.invert(d3.event.x))) - 10);
+
+          $('#dist_cut_start').val(Math.round(x_dist.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        function dragendedrightbar_dist(d) {
+          d3.select('#cutbar_left_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_dist').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_right_dist').attr("x1", x_dist(Math.round(x_dist.invert(d3.event.x)))).attr("x2", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cutbar_top_dist').attr("x2", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cuttab_right_dist').attr("x", x_dist(Math.round(x_dist.invert(d3.event.x))));
+
+          $('#dist_cut_end').val(Math.round(x_dist.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+
+        function dragstartedtab_dist(d) {
+          d3.select(this).raise().classed("active-tab", true);
+          d3.select('#cutbar_left_dist').raise().classed("active-bar", true);
+          d3.select('#cutbar_top_dist').raise().classed("active-bar", true);
+          d3.select('#cutbar_right_dist').raise().classed("active-bar", true);
+        }
+
+        function draggedlefttab_dist(d) {
+          d3.select('#cutbar_left_dist').attr("x1", d3.event.x + 10).attr("x2", d3.event.x + 10);
+          d3.select('#cutbar_top_dist').attr("x1", d3.event.x + 10);
+          d3.select('#cuttab_left_dist').attr("x", d3.event.x);
+        }
+
+        function draggedrighttab_dist(d) {
+          d3.select('#cutbar_right_dist').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top_dist').attr("x2", d3.event.x);
+          d3.select('#cuttab_right_dist').attr("x", d3.event.x);
+        }
+
+        function dragendedtableft_dist(d) {
+          d3.select(this).classed("active-tab", false);
+          d3.select('#cutbar_left_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_dist').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_left_dist').attr("x1", x_dist(Math.round(x_dist.invert(d3.event.x)))).attr("x2", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cutbar_top_dist').attr("x1", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cuttab_left_dist').attr("x", x_dist(Math.round(x_dist.invert(d3.event.x))) - 10);
+
+          $('#dist_cut_start').val(Math.round(x_dist.invert(d3.event.x + 10)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        function dragendedtabright_dist(d) {
+          d3.select(this).classed("active-tab", false);
+          d3.select('#cutbar_left_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_top_dist').raise().classed("active-bar", false);
+          d3.select('#cutbar_right_dist').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_right_dist').attr("x1", x_dist(Math.round(x_dist.invert(d3.event.x)))).attr("x2", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cutbar_top_dist').attr("x2", x_dist(Math.round(x_dist.invert(d3.event.x))));
+          d3.select('#cuttab_right_dist').attr("x", x_dist(Math.round(x_dist.invert(d3.event.x))));
+
+          $('#dist_cut_end').val(Math.round(x_dist.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        var zoom_dist = d3.zoom()
+          .scaleExtent([1, 10])
+          .translateExtent([[margin.left, 0], [width - margin.right, height]])
+          .extent([[margin.left, 0], [width - margin.right, height]])
+          .on("zoom", zoomed_dist);
+
+        
+
+        function zoomed_dist() {
+          
+          x_dist = d3.event.transform.rescaleX(orig_x_dist);
+
+          trans_k_dist = 1;
+          if (trans_k_dist != null) {
+            trans_k_dist = d3.event.transform.k;
+          }
+
+          x_dist.bandwidthh = function() { return ((width - margin.right - margin.left) / 205) * trans_k_dist; };
+
+          gX_dist.call(xAxis_dist_axis.scale(x_dist));
+
+          
+
+          if (x_dist.bandwidthh() < 9) {
+            gX_dist.style("font", "10px sans-serif");
+          } else if (x_dist.bandwidthh() >= 9 && x_dist.bandwidthh() < 11) {
+            gX_dist.style("font", "12px sans-serif");
+          } else if (x_dist.bandwidthh() >= 11 && x_dist.bandwidthh() < 13) {
+            gX_dist.style("font", "14px sans-serif");
+          } else if (x_dist.bandwidthh() >= 13 && x_dist.bandwidthh() < 15) {
+            gX_dist.style("font", "16px sans-serif");
+          } else if (x_dist.bandwidthh() >= 15 && x_dist.bandwidthh() < 17) {
+            gX_dist.style("font", "18px sans-serif");
+          } else if (x_dist.bandwidthh() >= 17) {
+            gX_dist.style("font", "20px sans-serif");
+          }
+
+          for(let i = 0; i < 205; i++) {
+            d3.select("#cut_bar_dist_" + i).attr("x", x_dist(i)).attr("width", x_dist.bandwidthh());
+          }
+
+
+          d3.select('#cutbar_left_dist').attr("x1", x_dist(dist_cut_start)).attr("x2", x_dist(dist_cut_start));
+          d3.select('#cuttab_left_dist').attr("x", x_dist(dist_cut_start) - 10);
+          d3.select('#cutbar_right_dist').attr("x1", x_dist(dist_cut_end)).attr("x2", x_dist(dist_cut_end));
+          d3.select('#cuttab_right_dist').attr("x", x_dist(dist_cut_end));
+          d3.select('#cutbar_top_dist').attr("x1", x_dist(dist_cut_start)).attr("x2", x_dist(dist_cut_end));
+
+        }
+
+        d3.select('#cuts_dist_svg').call(zoom_dist);
+
+
+        function zoom_in_dist() {
+          d3.select('#cuts_dist_svg').call(zoom_dist.scaleBy, 2);
+        }
+
+        function zoom_out_dist() {
+          d3.select('#cuts_dist_svg').call(zoom_dist.scaleBy, 0.5);
+        }
+
+        function move_left_dist() {
+          d3.select('#cuts_dist_svg').call(zoom_dist.translateBy, 50);
+        }
+
+        function move_right_dist() {
+          d3.select('#cuts_dist_svg').call(zoom_dist.translateBy, -50);
+        }
+
+        d3.select('#zoomin_dist_button').on('click', zoom_in_dist)
+        d3.select('#zoomout_dist_button').on('click', zoom_out_dist)
+        d3.select('#moveleft_dist_button').on('click', move_left_dist)
+        d3.select('#moveright_dist_button').on('click', move_right_dist)
+
+
+
+
+
+        d3.selectAll('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "A";})
+            .attr("color", "red").attr("font-weight", "bold");
+        d3.selectAll('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "C";})
+            .attr("color", "darkgreen").attr("font-weight", "bold");
+        d3.selectAll('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "G";})
+            .attr("color", "orange").attr("font-weight", "bold");
+        d3.selectAll('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "T";})
+            .attr("color", "darkblue").attr("font-weight", "bold");
+
+        d3.selectAll('svg')
+            .selectAll(".tick text").attr("font-weight", "bold");
+      }
+
+    
+
+    //}
+
+
+    d3.select('#gene_symbol')
+            .on('change', function () {
+                gene = $('#gene_symbol').val();
+
+                //socket.send("getsites_" + gene);
+                $.ajax({
+                  url: "https://apa.cs.washington.edu/api/pairgenes/" + gene + "?database=" + database_id,
+                  type: 'GET',
+                  dataType: 'json',
+                  success: get_pairsites
+                });
+
+                $('#apadb_list_button').text("APA Sites in " + gene)
+                $('#apadb_list_button').prop( "disabled", true );
+
+                $('#chosen_gene').text(gene);
+
+            });
+
+    d3.select('#predict_button')
+            .on('click', function () {
+
+                seq_prox = $('#seq_prox').val();
+                prox_cut_start = $('#prox_cut_start').val();
+                prox_cut_end = +$('#prox_cut_end').val() - 1;
+
+                seq_dist = $('#seq_dist').val();
+                dist_cut_start = $('#dist_cut_start').val();
+                dist_cut_end = +$('#dist_cut_end').val() - 1;
+
+                site_distance = $('#site_distance').val();
+
+                //socket.send("apadb_" + seq_prox + "_" + prox_cut_start + "_" + prox_cut_end + "_" + seq_dist + "_" + dist_cut_start + "_" + dist_cut_end + "_" + site_distance);
+
+                query_url = "https://apa.cs.washington.edu/api/apadb"
+                query_url += "?seq_prox=" + seq_prox
+                query_url += "&prox_cut_start=" + prox_cut_start
+                query_url += "&prox_cut_end=" + prox_cut_end
+                query_url += "&seq_dist=" + seq_dist
+                query_url += "&dist_cut_start=" + dist_cut_start
+                query_url += "&dist_cut_end=" + dist_cut_end
+                query_url += "&site_distance=" + site_distance
+
+                $.ajax({
+                    url: query_url,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: get_apadb
+                  });
+
+            });
+
+
+    // Connection opened
+    /*socket.addEventListener('open', function (event) {
+        socket.send("getsites_PTEN");
+        socket.send("getseqs_PTEN.1");
+
+        //Populate gene symbol dropdown
+        socket.send("getpairgenes");
+    });*/
+
+    $.ajax({
+      url: "https://apa.cs.washington.edu/api/pairgenes/PTEN" + "?database=" + database_id,
+      type: 'GET',
+      dataType: 'json',
+      success: get_pairsites
+    });
+
+    //socket.send("getseq_PTEN.1");
+    $.ajax({
+      url: "https://apa.cs.washington.edu/api/pairsites/PTEN.1" + "?database=" + database_id,
+      type: 'GET',
+      dataType: 'json',
+      success: get_pairsite
+    });
+
+    //Populate gene symbol dropdown
+    //socket.send("getgenes");
+    $.ajax({
+      url: "https://apa.cs.washington.edu/api/pairgenes" + "?database=" + database_id,
+      type: 'GET',
+      dataType: 'json',
+      success: get_pairgenes
+    });
+
+
+
+    </script>
+
+  </body>
+</html>

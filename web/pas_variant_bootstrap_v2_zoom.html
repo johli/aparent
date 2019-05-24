@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/css/bootstrap-select.min.css">
+
+    <style>
+
+        .active-bar {
+          stroke-dasharray: 5;
+        }
+
+        .active-tab {
+          fill: green;
+          stroke-dasharray: 5;
+        }
+
+        
+
+    </style>
+
+    <title>APARENT Variant Prediction</title>
+  </head>
+  <body>
+    
+  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+    <h5 class="my-0 mr-md-auto font-weight-normal">APARENT Variant Prediction</h5>
+    <nav class="my-2 my-md-0 mr-md-3">
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu">Home</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/mutagenesis">Mutagenesis</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/apa">APA Isoforms</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/pas">PAS Score</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/variant">Variants</a>
+    </nav>
+    <a class="btn btn-outline-primary" href="https://github.com/johli/aparent">GitHub</a>
+  </div>
+    
+
+    
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+        <p class="lead">Predict the change in cut distribution and isoform score due to the input pA sequence variant.</p>
+
+        <div class="alert alert-primary" role="alert">
+          See usage instructions below. Experiencing browser issues with the zoom function? Turn of zooming <a href="https://apa.cs.washington.edu/variant?zoom=false" class="alert-link">here</a>.
+        </div>
+
+        <div class="d-flex flex-row align-items-end">
+
+          <div class="p-2">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="database_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Database (PolyADB V3)
+              </button>
+              <div id='database_list' class="dropdown-menu" style="height:100px; overflow-y:auto;">
+                <a href='#' class='dropdown-item' id='polyadb'>PolyADB V3</a>
+                <a href='#' class='dropdown-item' id='apadb'>APADB V2</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2">
+            <select id="gene_symbol" class="selectpicker" data-live-search="true" title="Find Gene Symbol">
+              <option data-tokens="PTEN">PTEN</option>
+            </select>
+          </div>
+
+          <div class="p-2">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="apadb_list_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
+                pA Signals in Gene
+              </button>
+              <div id='apadb_list' class="dropdown-menu" style="height:400px; overflow-y:auto;">
+              </div>
+            </div>
+          </div>
+          <div class="p-2">
+                <h5 id='chosen_gene'></h5>
+          </div>
+        </div>
+
+        <h3 id='chosen_site'></h3>
+        
+        <div class="d-flex flex-row align-items-end">
+          <div class="p-2">
+            <button id="moveleft_button" class="btn btn-outline-primary mb-2 float-right">&lt;</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomin_button" class="btn btn-outline-primary mb-2 float-right">Zoom In</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomout_button" class="btn btn-outline-primary mb-2 float-right">Zoom Out</button>
+          </div>
+          <div class="p-2">
+            <button id="moveright_button" class="btn btn-outline-primary mb-2 float-right">&gt;</button>
+          </div>
+          <div class="p-2">
+            <p id='chosen_site_details'></p>
+          </div>
+        </div>
+
+        <svg id='cuts_svg' width='1200' height='400'></svg>
+        <br/>
+        <div class="d-flex flex-row">
+            <!-- <div class="p-2"><h1 id='variant_details'></h1></div> -->
+            <div class="p-2"><p id='variant_details' class="font-weight-bold"></p></div>
+        </div>
+        <div class="d-flex flex-row">
+            <div id='logodds_ratio_div'><!-- <h1 id='logodds_ratio'></h1> --></div>
+        </div>
+        <div class="d-flex flex-row">
+            <div class="p-2"><br/><h1 id='pas_score'></h1></div>
+            <div class="p-2"><svg id='apadb_histo' width='500' height='100'></svg></div>
+        </div>
+        <div style="width: 1200px">
+            <textarea class="form-control border-primary" id="ref_seq" rows="3"></textarea>
+            <br/>
+            <textarea class="form-control border-primary" id="var_seq" rows="3"></textarea>
+            <br/>
+            <div class="d-flex flex-row-reverse">
+              <div class="p-2"><button id="predict_button" class="btn btn-success mb-2 float-right">Predict</button></div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Isoform end</span>
+                  </div>
+                  <input id="cut_end" type="text" class="form-control border-primary" value="110">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Isoform start</span>
+                  </div>
+                  <input id="cut_start" type="text" class="form-control border-primary" value="80">
+                </div>
+              </div>
+            </div>
+            
+        </div>
+
+        <div class="card border-primary" style="width: 1200px">
+          <div class="card-body">
+            <row>
+              <h5 class="card-title text-primary">Legend</h5>
+              <button id="toggle_legend_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_legend" aria-expanded="false" aria-controls="toggle_legend">Show / Hide</button>
+              <h6 class="card-subtitle mb-2 text-muted">APA Variant Prediction</h6>
+              <p class="card-text">Explanation of values, fields and graphics presented in the tool.</p>
+
+              <div class="collapse" id="toggle_legend">
+                <ul class="list">
+                  <li class="list-item">
+                    <b>Reference Cleavage %</b><br/>
+                    The wildtype 3' cleavage distribution is shown as a black curve. The values (Cleavage %) are non-normalized (they do not sum to 100%). Rather, Cleavage % is scaled with respect to the strength of the PAS relative to the average affinity of a distal, well-separated PAS.
+                  </li>
+                  <li class="list-item">
+                    <b>Variant Cleavage %</b><br/>
+                    The variant 3' cleavage distribution is shown as either a red or green curve (depending on the effect of the variant).
+                  </li>
+                  <li class="list-item">
+                    <b>Isoform Window</b><br/>
+                    The window frame shown on top of the cleavage distribution defines what cleavage positions define the isoform of interest. All isoform metrics (e.g. the variant isoform fold change) is calculated by aggregating the cleavage within this window.
+                  </li>
+                  <li class="list-item">
+                    <b>Fold Change</b><br/>
+                    The APA isoform fold change of the selected SNV is shown in log scale.
+                  </li>
+                  <li class="list-item">
+                    <b>Wildtype score</b><br/>
+                    The aggregate APA isoform log odds ('strength') of the wildtype sequence, with respect to the average affinity of a well-separated, distal PAS. The histogram to the right shows the distribution of native human pA sites and their isoform scores.
+                  </li>
+                </ul>
+              </div>
+            </row>
+            <row>
+              <h5 class="card-title text-primary">Instructions</h5>
+              <button id="toggle_instructions_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_instructions" aria-expanded="false" aria-controls="toggle_instructions">Show / Hide</button>
+              <p class="card-text">Instructions on how to use the tool.</p>
+
+              <div class="collapse" id="toggle_instructions">
+                <ul class="list">
+                  <li class="list-item">
+                    <b>Choose gene and pA site</b><br/>
+                    Select the gene of interest in the dropdown list above the cleavage curve. Choosing a gene populates the dropdown to the right with the annotated pA sites of that gene. We currently provide integration with APADB (V2) and PolyADB (V3).
+                  </li>
+                  <li class="list-item">
+                    <b>(Optional) Specify custom pA sequence</b><br/>
+                    Instead of choosing from a list of native human pA sites, you can paste your own custom pA sequence in the text area. </b>Note:</b> The sequence must be 205 nucleotides.
+                  </li>
+                  <li class="list-item">
+                    <b>Specify variant sequence</b><br/>
+                    Specify the variant sequence in the text area. You can specify multiply nucleotide subsitutions (or indels) as long as the sequence is 205 nucleotides (pad as required).
+                  </li>
+                  <li class="list-item">
+                    <b>Define isoform window</b><br/>
+                    Drag the tabs of the isoform window over the region of the cleavage distribution according to what pA positions you wish to include in the isoform of interest.
+                  </li>
+                  <li class="list-item">
+                    <b>Zoom and pan the sequence</b><br/>
+                    Zoom and pan into specific regions of the sequence by pressing the zoom buttons above the cleavage curve, or simply by scrolling and dragging with the mouse over the cleavage curve.
+                  </li>
+                </ul>
+              </div>
+            </row>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+    
+  <footer class="my-5 pt-5 text-muted text-center text-small">
+    <p class="mb-1">Seelig Lab</p>
+    <a href="https://www.seeliglab.org/">Website</a> | jlinder2 (at) cs.washington.edu
+  </footer>
+
+
+
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/js/bootstrap-select.min.js"></script>
+
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.js"></script>
+
+
+    <script>
+
+    //AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT
+
+    //var socket = new WebSocket("ws://127.0.0.1:9990");
+
+
+    // Connection opened
+    /*socket.addEventListener('open', function (event) {
+        socket.send("aparent_AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT_80_110");
+    });*/
+
+
+    
+    
+
+
+    //socket.onmessage = function(message) {
+
+    //message_json = JSON.parse(message.data);
+
+    database_id = "polyadb";
+    database_name = "PolyADB V3";
+    $('#database_list a').click(function() {
+      database_id = this.id;
+      database_name = this.innerHTML;
+      $('#database_button').html("Database (" + this.innerHTML + ")");
+
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes/PTEN" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_sites
+      });
+
+      //socket.send("getseq_PTEN.28");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/sites/PTEN.1" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_site
+      });
+
+      //Populate gene symbol dropdown
+      //socket.send("getgenes");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_genes
+      });
+
+      $('#apadb_list_button').text("APA Sites in Gene");
+      $('#apadb_list_button').prop( "disabled", true );
+
+      $('#chosen_gene').text("PTEN");
+
+    });
+
+
+    function get_sites(message_json) {
+
+        gene = $('#gene_symbol').val();
+
+        $('#apadb_list').html("");
+        var dropdown = $('#apadb_list');
+
+        for(var i = 0; i < message_json["gene_id"].length; i++) {
+          var option = document.createElement('a');
+          
+          site_type = message_json["site_type"][i]
+          if(site_type === 'Extension') {
+            site_type = 'UTR3'
+          }
+
+          option.innerHTML = "PAS " + message_json["sitenum"][i] + " (" + site_type + ")";
+          option.href = "#";
+          option.id = message_json["gene_id"][i];
+
+          //option.class = "dropdown-item";
+          option.classList.add('dropdown-item');
+
+          dropdown.append(option);
+        }
+        $('#apadb_list a').click(function() {
+            gene_id = this.id;
+            //socket.send("getseq_" + gene_id);
+            $.ajax({
+              url: "https://apa.cs.washington.edu/api/sites/" + gene_id + "?database=" + database_id,
+              type: 'GET',
+              dataType: 'json',
+              success: get_site
+            });
+
+        });
+
+        $('#apadb_list_button').prop( "disabled", false );
+
+      }
+
+      function get_genes(message_json) {
+
+        $('#gene_symbol option').remove();
+
+        for(var i = 0; i < message_json["genes"].length; i++) {
+          var option = document.createElement('option');
+          
+          option.innerHTML = message_json["genes"][i];
+          $('#option').attr("data-tokens", message_json["genes"][i])
+
+          $('#gene_symbol').append(option);
+        }
+
+        $('#gene_symbol').selectpicker('refresh');
+
+      }
+
+      function get_site(message_json) {
+
+        $('#ref_seq').val(message_json["seq"]);
+        $('#var_seq').val(message_json["seq"]);
+        $('#cut_start').val(77);
+        $('#cut_end').val(115);
+
+        chrom = message_json["chrom"]
+        pas_pos = message_json["pas_pos_coord"]
+        strand = message_json["strand"]
+        native_usage = message_json["native_usage"]
+        clinvar_dict = message_json["clinvar_dict"]
+
+        $('#chosen_gene').text(message_json["gene"] + " PAS " + message_json["sitenum"] + " (" + message_json["site_type"] + ") ");
+
+        //$('#chosen_site').text(message_json["gene"] + " PAS " + message_json["sitenum"] + " (" + message_json["site_type"] + ") ");
+        $('#chosen_site_details').text("CSE Hexamer located at " + chrom + ":" + pas_pos + ":" + strand + ", Measured Isoform Abundance (" + database_name + ") = " + (Math.round(native_usage * 10000) / 10000));
+
+        $('#predict_button').click();
+
+      }
+
+      x = null;
+      orig_x = null;
+
+      trans_k = 1;
+
+      function get_variant(message_json) {
+
+        ref_seq = $('#ref_seq').val();
+        var_seq = $('#var_seq').val();
+        cut_start = +$('#cut_start').val();
+        cut_end = +$('#cut_end').val();
+
+        var_pos = -1;
+        ref_nt = "";
+        var_nt = "";
+        for(let i = 0; i < 205; i++) {
+          if(ref_seq[i] != var_seq[i]) {
+            var_pos = i;
+            ref_nt = ref_seq[i];
+            var_nt = var_seq[i];
+            break;
+          }
+        }
+
+        //d3.select("svg").remove();
+        d3.selectAll("svg > *").remove();
+
+        data_ref = []
+        for(let i = 0; i < 205; i++) {
+          data_ref.push({ name: i, value: +message_json['cut_ref'][i], nt: ref_seq[i] });
+        }
+        data_var = []
+        for(let i = 0; i < 205; i++) {
+          data_var.push({ name: i, value: +message_json['cut_var'][i], nt: var_seq[i] });
+        }
+
+        pas_logit_ref = 0
+        for(let i = cut_start; i < cut_end; i++) {
+          pas_logit_ref = pas_logit_ref + message_json['cut_ref'][i];
+        }
+        pas_logit_ref = Math.log(pas_logit_ref / (1.0 - pas_logit_ref));
+        pas_logit_ref = Math.round(pas_logit_ref * 1000) / 1000;
+
+        pas_logit_var = 0
+        for(let i = cut_start; i < cut_end; i++) {
+          pas_logit_var = pas_logit_var + message_json['cut_var'][i];
+        }
+        pas_logit_var = Math.log(pas_logit_var / (1.0 - pas_logit_var));
+        pas_logit_var = Math.round(pas_logit_var * 1000) / 1000;
+
+        $('#pas_score').text('Wildtype Score (log) = ' + pas_logit_ref);
+
+        var logodds_ratio = Math.round((pas_logit_var - pas_logit_ref) * 1000) / 1000;
+        odds_ratio = Math.round(Math.exp(logodds_ratio) * 1000) / 1000;
+        if (odds_ratio < 1) {
+          odds_ratio = 1 / odds_ratio;
+          odds_ratio = Math.round(odds_ratio * 1000) / 1000;
+        }
+
+        if(var_pos != -1) {
+          //$('#variant_details').text('Variant ' + ref_nt + ">" + var_nt + ' @ ' + var_pos + ': ');
+          var var_str = "Selected Variant(s):";
+          var found_variant = false;
+          for(let i = 0; i < 205; i++) {
+            if(ref_seq[i] != var_seq[i]) {
+              if(!found_variant) {
+                var_str += " " + ref_seq[i] + ">" + var_seq[i] + ' @ ' + i;
+                found_variant = true;
+              } else {
+                var_str += ", " + ref_seq[i] + ">" + var_seq[i] + ' @ ' + i;
+              }
+            }
+          }
+          $('#variant_details').text(var_str);
+
+          logodds_ratio_h1 = document.createElement('h1');
+          logodds_ratio_h1.id = "logodds_ratio";
+          logodds_ratio_h1.classList.add('p-2');
+          $('#logodds_ratio_div').html("");
+          $('#logodds_ratio_div').append(logodds_ratio_h1);
+
+          $('#logodds_ratio').text('Fold Change (log) = ' + logodds_ratio + ' (' + odds_ratio + '-Fold)');
+          if(pas_logit_var - pas_logit_ref > 0) {
+            $('#logodds_ratio').css('color', 'green');
+          } else {
+            $('#logodds_ratio').css('color', 'red');
+          }
+        } else {
+          $('#variant_details').text('No Variant Selected');
+          $('#logodds_ratio').text("");
+        }
+
+        margin = ({top: 20, right: 0, bottom: 60, left: 40});
+
+        width = $('#cuts_svg').attr('width');
+        height = $('#cuts_svg').attr('height');
+
+
+        y = d3.scaleLinear()
+            .domain([0, d3.max(data_ref.concat(data_var), d => d.value)]).nice()
+            .range([height - margin.bottom, margin.top]);
+
+        //x = d3.scaleBand()
+        //    .domain(data_ref.map(d => d.name))
+        //    .range([margin.left, width - margin.right]);
+
+        if (x == null) {
+          x = d3.scaleLinear()
+              .domain([0, 205])//.nice()
+              .range([margin.left, width - margin.right]);
+
+          orig_x = x;
+
+          x.bandwidthh = function() { return (width - margin.right - margin.left) / 205; };
+
+        }
+
+        //x.bandwidthh = function() { return (width - margin.right - margin.left) / 205; };
+
+        yAxis = g => g
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.select(".tick:last-of-type text").clone()
+                .attr("x", 4)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("Cleavage %"));
+
+        xAxis_axis = d3.axisBottom(x).tickValues(data_ref.map(d => d.name + 0.5)).tickFormat(function(d,i){ return ref_seq[i] });
+        xAxisVar_axis = d3.axisBottom(x).tickSize(0).tickValues(data_var.map(d => d.name + 0.5)).tickFormat(function(d,i){ if(ref_seq[i] != var_seq[i]) {return var_seq[i];} else { return ""; } });
+
+        xAxis = g => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis_axis);
+
+        xAxisVar = g => g
+            .attr("transform", `translate(0,${height - 0.725 * margin.bottom})`)
+            //.call(d3.axisBottom(x).tickSize(0).tickValues(data_var.map(d => d.name)).tickFormat(function(d,i){ if(i == var_pos) {return var_seq[i];} else { return ""; } })).call(g => g.select(".domain").remove());
+            .call(xAxisVar_axis).call(g => g.select(".domain").remove());
+
+        line = d3.line()
+          .defined(d => !isNaN(d.value) && x(d.name) >= margin.left)
+          .x(d => x(d.name))
+          .y(d => y(d.value));
+
+
+        d3.select('svg').append("path")
+          .attr("id", "cut_ref_line")
+          .datum(data_ref)
+          .attr("fill", "none")
+          .attr("stroke", "black")
+          .attr("stroke-width", 2)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round")
+          .attr("d", line);
+
+        if(var_pos != -1) {
+          if(pas_logit_var - pas_logit_ref > 0) {
+            d3.select('svg').append("path")
+              .attr("id", "cut_var_line")
+              .datum(data_var)
+              .attr("fill", "none")
+              .attr("stroke", "green")
+              .attr("stroke-width", 2)
+              .attr("stroke-linejoin", "round")
+              .attr("stroke-linecap", "round")
+              .attr("d", line);
+          } else {
+            d3.select('svg').append("path")
+              .attr("id", "cut_var_line")
+              .datum(data_var)
+              .attr("fill", "none")
+              .attr("stroke", "red")
+              .attr("stroke-width", 2)
+              .attr("stroke-linejoin", "round")
+              .attr("stroke-linecap", "round")
+              .attr("d", line);
+          }
+        }
+
+
+
+
+        var gX = d3.select('svg')
+            .append("g")
+            .call(xAxis);
+
+        var gX_var = d3.select('svg')
+            .append("g")
+            .call(xAxisVar)
+
+        d3.select('svg')
+            .append("line")
+            .attr("id", "cutbar_left")
+            .attr("x1", x(cut_start))
+            .attr("y1", y(0))
+            .attr("x2", x(cut_start))
+            .attr("y2", y(d3.max(data_ref.concat(data_var), d => 1.02 * d.value)))
+            .attr("stroke-width", 2)
+            .attr("stroke", "black")
+            .call(d3.drag()
+            .on("start", dragstartedbar)
+            .on("drag", draggedleftbar)
+            .on("end", dragendedleftbar));
+
+        d3.select('svg')
+            .append("rect")
+            .attr("id", "cuttab_left")
+            .attr("fill", "darkgreen")
+            .attr("stroke-width", 2)
+            .attr("stroke", "black")
+            .attr("x", x(cut_start) - 10)
+            .attr("y", (y(0) + y(d3.max(data_ref.concat(data_var), d => 1.02 * d.value))) / 2 - 15)
+            .attr("height", 30)
+            .attr("width", 10)
+            .attr("rx", 2)
+            .call(d3.drag()
+            .on("start", dragstartedtab)
+            .on("drag", draggedlefttab)
+            .on("end", dragendedtableft));
+
+        d3.select('svg')
+            .append("line")
+            .attr("id", "cutbar_right")
+            .attr("x1", x(cut_end))
+            .attr("y1", y(0))
+            .attr("x2", x(cut_end))
+            .attr("y2", y(d3.max(data_ref.concat(data_var), d => 1.02 * d.value)))
+            .attr("stroke-width", 2)
+            .attr("stroke", "black")
+            .call(d3.drag()
+            .on("start", dragstartedbar)
+            .on("drag", draggedrightbar)
+            .on("end", dragendedrightbar));
+
+        d3.select('svg')
+            .append("rect")
+            .attr("id", "cuttab_right")
+            .attr("fill", "darkgreen")
+            .attr("stroke-width", 2)
+            .attr("stroke", "black")
+            .attr("x", x(cut_end))
+            .attr("y", (y(0) + y(d3.max(data_ref.concat(data_var), d => 1.02 * d.value))) / 2 - 15)
+            .attr("height", 30)
+            .attr("width", 10)
+            .attr("rx", 2)
+            .call(d3.drag()
+            .on("start", dragstartedtab)
+            .on("drag", draggedrighttab)
+            .on("end", dragendedtabright));
+
+        d3.select('svg')
+            .append("line")
+            .attr("id", "cutbar_top")
+            .attr("x1", x(cut_start))
+            .attr("y1", y(d3.max(data_ref.concat(data_var), d => 1.02 * d.value)))
+            .attr("x2", x(cut_end))
+            .attr("y2", y(d3.max(data_ref.concat(data_var), d => 1.02 * d.value)))
+            .attr("stroke-width", 2)
+            .attr("stroke", "black");
+        
+        d3.select('svg')
+            .append("rect")
+            .attr("id", "cuts_white_bg_left")
+            .attr("fill", "white")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", margin.left);
+
+        var gY = d3.select('svg')
+            .append("g")
+            .call(yAxis);
+
+
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "A";})
+            .attr("color", "red").attr("font-weight", "bold");
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "C";})
+            .attr("color", "darkgreen").attr("font-weight", "bold");
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "G";})
+            .attr("color", "orange").attr("font-weight", "bold");
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "T";})
+            .attr("color", "darkblue").attr("font-weight", "bold");
+
+        d3.select('svg')
+            .selectAll(".tick text").attr("font-weight", "bold");
+
+
+        if (x.bandwidthh() < 9) {
+          gX.style("font", "10px sans-serif");
+          gX_var.style("font", "10px sans-serif");
+
+          gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom})`);
+
+        } else if (x.bandwidthh() >= 9 && x.bandwidthh() < 11) {
+          gX.style("font", "12px sans-serif");
+          gX_var.style("font", "12px sans-serif");
+
+          gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 1})`);
+          //.attr("transform", `translate(0,${height - 0.675 * margin.bottom})`)
+
+        } else if (x.bandwidthh() >= 11 && x.bandwidthh() < 13) {
+          gX.style("font", "14px sans-serif");
+          gX_var.style("font", "14px sans-serif");
+
+          gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 2})`);
+
+        } else if (x.bandwidthh() >= 13 && x.bandwidthh() < 15) {
+          gX.style("font", "16px sans-serif");
+          gX_var.style("font", "16px sans-serif");
+
+          gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 5})`);
+
+        } else if (x.bandwidthh() >= 15 && x.bandwidthh() < 17) {
+          gX.style("font", "18px sans-serif");
+          gX_var.style("font", "18px sans-serif");
+
+          gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 6})`);
+
+        } else if (x.bandwidthh() >= 17) {
+          gX.style("font", "20px sans-serif");
+          gX_var.style("font", "20px sans-serif");
+
+          gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 7})`);
+
+        }
+
+
+
+        function dragstartedbar(d) {
+          d3.select('#cutbar_left').raise().classed("active-bar", true);
+          d3.select('#cutbar_top').raise().classed("active-bar", true);
+          d3.select('#cutbar_right').raise().classed("active-bar", true);
+        }
+
+        function draggedleftbar(d) {
+          d3.select('#cutbar_left').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top').attr("x1", d3.event.x);
+          d3.select('#cuttab_left').attr("x", d3.event.x - 10);
+        }
+
+        function draggedrightbar(d) {
+          d3.select('#cutbar_right').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top').attr("x2", d3.event.x);
+          d3.select('#cuttab_right').attr("x", d3.event.x);
+        }
+
+        function dragendedleftbar(d) {
+          d3.select('#cutbar_left').raise().classed("active-bar", false);
+          d3.select('#cutbar_top').raise().classed("active-bar", false);
+          d3.select('#cutbar_right').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_left').attr("x1", x(Math.round(x.invert(d3.event.x)))).attr("x2", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cutbar_top').attr("x1", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cuttab_left').attr("x", x(Math.round(x.invert(d3.event.x))) - 10);
+
+          $('#cut_start').val(Math.round(x.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        function dragendedrightbar(d) {
+          d3.select('#cutbar_left').raise().classed("active-bar", false);
+          d3.select('#cutbar_top').raise().classed("active-bar", false);
+          d3.select('#cutbar_right').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_right').attr("x1", x(Math.round(x.invert(d3.event.x)))).attr("x2", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cutbar_top').attr("x2", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cuttab_right').attr("x", x(Math.round(x.invert(d3.event.x))));
+
+          $('#cut_end').val(Math.round(x.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+
+        function dragstartedtab(d) {
+          d3.select(this).raise().classed("active-tab", true);
+          d3.select('#cutbar_left').raise().classed("active-bar", true);
+          d3.select('#cutbar_top').raise().classed("active-bar", true);
+          d3.select('#cutbar_right').raise().classed("active-bar", true);
+        }
+
+        function draggedlefttab(d) {
+          d3.select('#cutbar_left').attr("x1", d3.event.x + 10).attr("x2", d3.event.x + 10);
+          d3.select('#cutbar_top').attr("x1", d3.event.x + 10);
+          d3.select('#cuttab_left').attr("x", d3.event.x);
+        }
+
+        function draggedrighttab(d) {
+          d3.select('#cutbar_right').attr("x1", d3.event.x).attr("x2", d3.event.x);
+          d3.select('#cutbar_top').attr("x2", d3.event.x);
+          d3.select('#cuttab_right').attr("x", d3.event.x);
+        }
+
+        function dragendedtableft(d) {
+          d3.select(this).classed("active-tab", false);
+          d3.select('#cutbar_left').raise().classed("active-bar", false);
+          d3.select('#cutbar_top').raise().classed("active-bar", false);
+          d3.select('#cutbar_right').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_left').attr("x1", x(Math.round(x.invert(d3.event.x)))).attr("x2", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cutbar_top').attr("x1", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cuttab_left').attr("x", x(Math.round(x.invert(d3.event.x))) - 10);
+
+          $('#cut_start').val(Math.round(x.invert(d3.event.x + 10)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+        function dragendedtabright(d) {
+          d3.select(this).classed("active-tab", false);
+          d3.select('#cutbar_left').raise().classed("active-bar", false);
+          d3.select('#cutbar_top').raise().classed("active-bar", false);
+          d3.select('#cutbar_right').raise().classed("active-bar", false);
+
+          d3.select('#cutbar_right').attr("x1", x(Math.round(x.invert(d3.event.x)))).attr("x2", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cutbar_top').attr("x2", x(Math.round(x.invert(d3.event.x))));
+          d3.select('#cuttab_right').attr("x", x(Math.round(x.invert(d3.event.x))));
+
+          $('#cut_end').val(Math.round(x.invert(d3.event.x)));
+          $(document).ready(function() {$('#predict_button').click();});
+        }
+
+
+
+        var zoom = d3.zoom()
+          .scaleExtent([1, 10])
+          .translateExtent([[margin.left, 0], [width - margin.right, height]])
+          .extent([[margin.left, 0], [width - margin.right, height]])
+          .on("zoom", zoomed);
+
+        
+
+        function zoomed() {
+          
+          x = d3.event.transform.rescaleX(orig_x);
+
+          trans_k = 1;
+          if (trans_k != null) {
+            trans_k = d3.event.transform.k;
+          }
+
+          x.bandwidthh = function() { return ((width - margin.right - margin.left) / 205) * trans_k; };
+
+          gX_var.call(xAxisVar_axis.scale(x)).call(g => g.select(".domain").remove());
+          gX.call(xAxis_axis.scale(x));
+
+          
+
+          if (x.bandwidthh() < 9) {
+            gX.style("font", "10px sans-serif");
+            gX_var.style("font", "10px sans-serif");
+
+            gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom})`);
+
+          } else if (x.bandwidthh() >= 9 && x.bandwidthh() < 11) {
+            gX.style("font", "12px sans-serif");
+            gX_var.style("font", "12px sans-serif");
+
+            gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 1})`);
+            //.attr("transform", `translate(0,${height - 0.675 * margin.bottom})`)
+
+          } else if (x.bandwidthh() >= 11 && x.bandwidthh() < 13) {
+            gX.style("font", "14px sans-serif");
+            gX_var.style("font", "14px sans-serif");
+
+            gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 2})`);
+
+          } else if (x.bandwidthh() >= 13 && x.bandwidthh() < 15) {
+            gX.style("font", "16px sans-serif");
+            gX_var.style("font", "16px sans-serif");
+
+            gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 5})`);
+
+          } else if (x.bandwidthh() >= 15 && x.bandwidthh() < 17) {
+            gX.style("font", "18px sans-serif");
+            gX_var.style("font", "18px sans-serif");
+
+            gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 6})`);
+
+          } else if (x.bandwidthh() >= 17) {
+            gX.style("font", "20px sans-serif");
+            gX_var.style("font", "20px sans-serif");
+
+            gX_var.attr("transform", `translate(0,${height - 0.725 * margin.bottom + 7})`);
+
+          }
+
+          var new_line = d3.line()
+            .defined(d => !isNaN(d.value) && x(d.name) >= margin.left)
+            .x(d => x(d.name))
+            .y(d => y(d.value));
+
+
+          d3.select('#cut_ref_line').attr("d", new_line);
+          d3.select('#cut_var_line').attr("d", new_line);
+
+
+          d3.select('#cutbar_left').attr("x1", x(cut_start)).attr("x2", x(cut_start));
+          d3.select('#cuttab_left').attr("x", x(cut_start) - 10);
+          d3.select('#cutbar_right').attr("x1", x(cut_end)).attr("x2", x(cut_end));
+          d3.select('#cuttab_right').attr("x", x(cut_end));
+          d3.select('#cutbar_top').attr("x1", x(cut_start)).attr("x2", x(cut_end));
+
+        }
+
+        d3.select('svg').call(zoom);
+
+
+        function zoom_in() {
+          d3.select('svg').call(zoom.scaleBy, 2);
+        }
+
+        function zoom_out() {
+          d3.select('svg').call(zoom.scaleBy, 0.5);
+        }
+
+        function move_left() {
+          d3.select('svg').call(zoom.translateBy, 50);
+        }
+
+        function move_right() {
+          d3.select('svg').call(zoom.translateBy, -50);
+        }
+
+        d3.select('#zoomin_button').on('click', zoom_in)
+        d3.select('#zoomout_button').on('click', zoom_out)
+        d3.select('#moveleft_button').on('click', move_left)
+        d3.select('#moveright_button').on('click', move_right)
+
+
+
+        //Histogram code
+
+        //data = [-4.1, -3.2, -3.4, -2.6, -2.8, -2.3, 0.2, 0.5, 0.7, 0.6, 0.5, 2.2, 2.5, 2.6, 3.8, 3.9, 4.2, 4.5];
+        data = [3.110, 3.949, -0.141, -3.204, 0.722, 2.370, 5.253, 1.950, 4.375, 0.174, 3.754, 1.509, 1.509, 0.653, -1.312, -1.637, -1.033, -0.973, -0.607, 1.381, 0.072, -0.252, -0.174, 1.457, 1.020, 1.305, 1.452, 2.287, 1.406, 0.929, -2.278, 1.598, 0.904, 0.884, -0.205, 3.660, -1.725, 1.643, 2.401, 1.533, -0.644, -0.424, 1.123, 1.002, -3.959, -0.350, 2.949, -3.517, 2.367, 2.477, 1.607, -4.291, 0.959, 1.099, 1.704, -2.337, 1.193, -4.849, -3.787, -3.992, 2.287, 4.313, 0.345, 4.108, 2.335, -0.482, -3.854, -1.204, 0.733, -1.319, 1.227, -2.109, 1.423, 0.232, 1.337, -1.625, -1.922, 3.457, -0.466, 3.694, -4.740, 2.525, -2.853, -1.968, 1.947, -1.013, -0.045, 1.548, -3.144, 1.173, -1.285, 1.480, 1.846, 3.616, 1.911, 0.997, 1.718, -2.076, 0.336, 1.042, 2.276, 2.249, -2.188, 2.305, -6.860, 0.373, -4.461, -2.015, 4.154, 2.012, 3.040, 3.440, -0.484, 4.031, 2.611, -0.444, 1.495, 0.937, -1.738, 2.938, 1.408, -3.287, 0.845, -3.293, 1.124, -0.309, 1.457, 0.052, 2.976, 0.659, -3.982, 0.204, -0.676, 2.934, -1.245, 1.186, 2.308, -3.002, 1.529, 1.558, -3.942, -2.409, 2.426, -0.939, 0.060, 0.024, 1.721, 0.494, 2.901, 1.518, 1.841, 3.236, 3.019, 1.793, 1.648, 0.753, 1.681, -1.419, 2.606, 0.239, 3.139, -1.171, 0.404, 4.233, -1.327, -1.106, 1.730, -3.659, -3.986, 0.961, -1.306, -3.660, -2.635, 3.580, 0.603, 1.522, -2.459, 2.550, 2.119, -2.455, -6.011, 3.051, -0.328, 0.024, 0.994, 3.213, 0.599, -0.597, 0.576, -4.332, 0.451, -4.682, -1.446, 0.748, 1.470, 0.259, 1.922, 2.315, 2.489, -2.335, 1.943, -6.687, 2.986, -3.559, 3.196, 1.918, -1.959, 1.628, 2.423, -4.868, 1.061, -6.278, 0.192, 4.365, -1.040, 1.592, 0.419, -0.318, 2.479, 0.399, 3.358, 1.631, -4.441, 1.127, -7.338, 0.386, -4.952, 2.519, 2.086, 2.967, 0.373, -1.900, 2.307, 2.417, -3.655, -1.040, 1.541, -1.120, 0.400, 3.296, -3.458, 1.451, -2.081, 2.510, 2.041, 1.281, -2.357, 3.028, 1.239, 5.079, 1.584, -1.809, 1.250, 4.332, 3.103, -2.770, 2.199, 3.852, 3.550, 3.508, 1.861, -3.834, 2.769, 1.919, -3.935, -4.311, -0.027, -1.769, 1.908, -1.196, -0.104, 1.859, -0.598, 0.410, -2.440, -0.930, 1.386, -0.476, 2.383, 0.194, 2.895, -1.271, 3.361, -5.316, 0.529, 1.784, -0.836, -2.571, 2.372, -2.181, 1.977, 1.607, -1.249, -1.491, 3.732, 0.075, 0.619, -0.961, -4.606, 3.597, 4.263, 2.488, 3.906, -1.149, 2.046, -1.819, 0.922, 1.221, 1.726, -1.953, -1.356, 0.369, -2.322, 2.975, 3.596, -2.040, 2.148, -3.305, 0.167, 0.258, -1.548, -1.211, 2.428, 0.002, 0.265, -1.863, -0.109, -3.239, -3.918, 3.173, 2.309, 3.065, 0.645, -1.887, -6.980, -4.589, 4.770, -1.105, 3.135, -0.843, 3.545, 1.708, 2.517, 1.878, 3.927, 3.099, 1.093, 2.269, -0.950, 2.130, 2.611, 1.316, 1.295, 2.124, -3.706, -1.941, -1.941, -5.202, -3.994, -5.057, 1.870, 2.286, -3.323, 0.147, 0.235, 2.411, -3.775, 3.641, -0.862, -0.937, 2.212, 2.228, 2.189, -0.451, -0.579, -5.777, -2.851, 2.697, 1.307, -1.961, -2.498, -0.011, 1.889, 0.807, 4.292, -1.258, 0.867, 3.029, -3.326, 1.639, 1.707, 2.999, 2.948, 2.798, 2.262, -0.073, -3.575, -1.813, 1.768, 1.844, -3.180, -3.588, 1.688, 1.064, 2.929, -1.174, 2.772, 2.167, 5.239, -0.324, 0.674, -2.123, 0.791, -0.292, 0.897, 1.167, -1.938, 0.875, 1.803, 1.180, -0.750, 3.051, 2.030, 1.028, 2.893, 1.654, 2.996, 1.369, 0.797, 0.952, 2.463, -0.785, 1.673, -0.276, 2.186, 2.331, -4.126, -0.709, 2.253, 3.126, -1.438, -0.375, 2.285, 3.149, 2.893, -1.674, -0.698, -4.948, 1.995, -2.182, 1.821, 1.359, -3.213, -1.134, -2.521, 1.825, 2.688, 1.719, 0.535, 1.968, -1.472, 1.736, 2.413, 0.567, -6.379, -1.038, -3.259, 0.238, 2.181, 2.455, 1.226, -3.298, -2.162, -0.017, 3.869, -7.451, -2.987, 0.494, 1.522, -1.861, -0.015, 0.482, -2.948, 0.448, 3.059, 1.008, -1.547, 0.312, -0.429, 3.041, -1.917, 0.387, -2.444, 0.040, 1.147, 0.271, -0.512, 1.882, 1.749, 0.991, -1.923, 3.499, 1.731, 2.332, 1.475, 2.062, -0.665, 2.567, 1.077, 2.577, -2.561, 2.130, 0.376, 1.257, 2.924, 1.749, 3.774, -1.007, 1.373, 3.313, 2.393, 1.495, 3.493, -0.523, 3.142, 1.683, 0.533, 3.125, -2.047, 2.564, 1.685, 1.592, 0.936, 3.050, 1.159, -0.638, -4.187, 4.128, 3.023, -0.749, 1.033, 1.338, -1.287, 2.294, -1.935, 3.948, -1.719, 2.775, -3.092, -1.718, 1.239, 1.309, 2.324, -0.156, -0.167, 0.628, -2.379, -5.104, -2.797, -0.215, -4.304, -0.202, 2.547, 1.947, 1.099, 2.839, -5.086, -0.760, 2.983, 0.991, 0.991, -4.301, 1.674, -1.070, 2.293, 0.469, 1.510, -1.757, 1.203, 2.801, 2.834, 1.884, -4.266, -1.394, 0.444, -7.070, -0.730, 1.964, -0.272, 2.089, 1.161, 1.326, 0.290, 1.821, -1.737, 0.962, -3.213, 3.007, 1.585, 1.021, -2.713, 2.014, 1.474, 1.535, 1.943, -1.982, 1.442, -3.914, 0.363, 3.234, 2.639, -0.028, 1.631, 0.226, 0.752, -3.641, 2.311, 2.560, 3.349, 0.314, 4.459, 3.566, -2.950, 1.392, 4.068, 1.244, -3.484, -0.440, -0.426, -0.938, -0.082, -2.684, -2.438, 3.482, -1.638, 0.423, -4.157, -0.328, -2.966, -5.640, 0.862, 0.202, 1.890, -0.994, -3.358, 3.946, -3.564, -0.493, -1.437, 2.499, 1.958, 0.805, -0.014, -3.011, -0.322, -0.084, -3.388, 0.076, -0.510, 3.380, 2.414, -0.509, 4.664, -3.115, 1.711, 2.433, 1.346, 1.068, 1.424, 1.813, -4.552, 2.313, 0.758, 1.544, 1.091, 3.048, 3.850, -0.747, -6.251, 0.663, -1.645, 4.394, -2.197, -2.359, 2.466, -3.515, 0.616, -1.112, 1.799, -0.399, 1.398, 2.209, -3.178, 2.293, 1.754, 4.471, -1.171, -4.494, 1.660, 0.426, 1.748, 0.704, -1.320, -4.422, 2.649, -2.366, 2.442, 0.544, -1.973, 2.416, -1.196, -0.407, 1.523, -3.933, 0.737, -3.922, -2.897, -2.897, -2.248, 3.110, 2.554, 2.532, -5.382, 0.423, 4.006, -0.113, 1.384, -1.480, 1.535, 1.517, -5.547, 0.791, 2.403, -5.609, 1.303, 2.945, -1.018, -0.055, -0.593, 1.637, 2.548, -0.368, 3.502, -0.804, -0.262, 0.173, 2.787, -4.087, 1.097, 2.748, 2.843, 1.599, -0.347, 0.886, 3.340, 2.365, 1.958, 2.533, 1.986, -2.165, 2.193, 1.204, 0.103, -2.188, -2.448, -3.273, -0.086, 2.082, 0.890, 0.626, 0.653, 3.160, 2.970, 1.958, 2.629, 2.704, 1.039, 2.059, 1.310, -2.154, 1.552, -0.313, 2.319, -1.760, 3.357, 0.686, -1.166, -5.042, -3.298, -3.237, -2.184, 1.782, 1.251, 0.074, -3.002, 0.490, 0.271, -0.711, -2.294, 0.534, -0.927, 1.564, 0.411, -2.104, 1.323, 2.028, 2.573, 1.842, -0.790, -2.336, -4.554, 0.866, 2.004, 2.204, -1.886, 1.561, -1.427, 0.966, 2.091, 1.428, -2.727, 0.039, -2.928, -0.511, -0.743, 1.392, 0.114, -3.144, 2.368, 2.853, -1.366, 2.076, 1.911, 1.763, 2.806, -4.134, 2.728, 0.335, -5.154, 0.909, -6.985, -2.332, 1.695, 3.821, -3.084, 3.024, -0.742, -0.571, 2.864, -0.025, -0.300, -2.130, 0.377, 1.977, 1.773, 1.233, -3.267, 0.632, -0.370, 4.348, -0.713, 3.243, -3.565, 3.262, 2.671, -2.041, 1.103, 0.194, -0.050, 2.700, -6.287, 0.374, 0.107, -2.882, -0.664, 1.482, -2.581, 4.775, -0.468, -0.139, -1.995, -1.813, -4.612, -0.694, -3.989, 2.436, -0.429, 0.090, -0.528, 0.763, -1.212, 0.099, -3.126, 2.444, 2.005, -3.370, 2.338, 1.997, -0.950, 4.155, -1.070, -5.408, -2.227, 3.146, -0.600, -6.302, -0.454, 2.776, 3.289, 1.936, -0.559, 1.623, -4.350, -4.497, 4.990, -1.694, -5.934, 2.714, 1.297, 1.658, 3.386, 3.817, -1.156, -3.009, 3.707, -0.630, 2.033, -2.705, 3.495, -1.989, 4.026, -4.818, 2.660, -1.814, -1.462, -2.118, 2.564, -0.656, 2.271, 5.477, 2.530, 2.186, -8.098, 1.148, 2.012, 1.234, -0.711, 0.750, -0.976, 2.993, -5.370, -0.091, -0.293, -1.956, 1.504, 1.266, -0.935, -6.325, 2.916, 0.360, 2.115, 2.617, 2.004, -7.105, 2.043, 1.284, 1.730, -1.859, 1.962, 2.778, 2.607, 0.618, 2.448, -1.772, 3.586, 3.063, -1.759, 2.312, 1.053, -0.188, 1.093, 0.211, -0.335, -4.293, 2.134, -0.115, -3.665, 0.664, -1.544, 3.747, 2.904, 3.565, -0.039, 2.111, 1.041, -0.226, -3.027, 2.407, -5.381, 3.904, -5.710, -0.221, 4.934, -1.334, -0.352, 2.723, -3.271, 2.316, 1.206, 2.425, 0.468, 1.659, 0.357, 1.670, -1.405, -0.563, 1.887, -0.403, 2.699, -5.108, 2.157, -0.794, 1.123, 2.245, 1.428, 3.348, -1.112, 2.786, 3.010, 0.619, 2.014, -1.731, 2.149, -0.757, -2.618, 2.253, -1.229, 2.363, 4.725, 2.806, -2.649, -1.383, 2.436, 1.993, 2.294, 3.738, 1.932, 3.143, 0.734, -3.578, -2.272, -3.038, -0.654, -0.005, 1.580, 2.542, 2.734, 0.932, -3.520, 2.291, -2.856, 0.190, -2.533, 2.234, -0.899, 3.774, -1.164, 1.020, -2.099, 3.262, 1.001, -5.654, 4.045, 2.727, 1.991, -0.882, 3.169, -0.343, 0.654, -1.184, -0.899, -3.626, 2.721, -1.233, -2.026, 2.541, -1.552, 2.956, 1.859, 4.337, 1.181, 2.890, -2.266, 2.767, 1.252, -1.052, 1.849, 2.263, 4.038, -2.298, 2.986, -5.858, 0.833, 3.667, -0.427, 2.242, -2.561, -2.435, 1.049, 0.510, 0.385, -3.260, 3.657, 1.885, -0.379, 3.007, 1.843, 0.773, -2.116, -2.384, 3.206, -4.143, 1.922, -1.310, -2.870, 3.333, 1.290, 1.290, 1.313, 0.927, -0.286, -2.358, 1.494, 0.442, 2.140, -0.210, -1.353, 2.059, 1.899, 2.150, 2.586, 4.600, -4.415, 1.473, -1.129, 2.031, -1.802, 3.986, 4.430, 0.379, 0.259, -0.366, 3.125, 0.823, 1.549, 3.791, 2.034, -0.833, 3.136, -1.547, 0.795, 2.201, 0.246, -1.858, -0.050, 1.738, 2.259, 3.723, -0.065, -0.814, 2.345, 0.427, -1.103, 2.329, 0.179, 1.350, -1.866, 2.789, 0.662, -4.382, -0.134, 2.396, -1.918, 1.074, -4.013, 0.573, 0.004, -0.431, -2.110, 2.555, -2.031, 0.138, 4.421, -3.283, 1.884, -0.934, 4.007, 0.343, 0.484, -3.559, -0.305, -0.238, 3.877, 3.030, 2.069, -1.678, 0.804, -0.435, 3.324, 2.235, -3.258, 1.113, 1.091, 1.234, -7.120, 2.933, 0.795, 0.795, -3.929, -4.548, -4.738, -1.904, 2.328, 1.142, -0.198, -2.623, 1.625, 0.020, 0.013, 1.473, -0.372, 0.426, 1.160, -0.614, -0.048, -1.209, -2.665, -0.609, 0.681, 2.670, 0.831, 4.196, -2.804, 0.519, 1.004, 2.573, 0.035, -2.192, -3.299, 3.351, -1.298, 5.917, 3.214, -1.418, 1.989, 3.215, -2.755, 1.646, 4.150, -0.307, 2.547, -5.143, 2.704, 2.332, -5.868, 4.602, -1.938, 1.006, 0.734, 0.524, 3.029, 2.767, -1.203, 1.778, -3.757, 2.610, 1.511, -1.596, 1.793, 3.370, 2.798, -7.484, -4.127, 2.265, 1.657, -0.508, 2.063, -2.186, 0.577, -1.249, 1.159, 0.030, 1.794, 2.269, -6.106, 2.275, -1.204, 0.164, 3.061, -1.605, 1.109, -5.336, 2.975, 2.387, 3.795, -2.734, 0.574, 1.410, 3.737, -1.288, 0.187, -4.983, 3.634, 3.962, -2.820, 0.795, 1.596, 1.596, 1.315, 1.753, -1.291, 3.593, -0.760, 1.010, -0.650, -1.251, 0.409, -0.925, 2.926, -3.408, 1.932, 1.662, 2.268, 3.408, 0.128, 1.523, 2.403, -2.774, -1.901, -1.105, -1.591, 0.583, 2.339, 1.885, -2.167, 3.491, 2.629, -0.811, 2.561, 0.866, 1.824, -1.814, 0.519, 2.306, -1.119, 3.854, 1.952, 2.254, 1.422, 0.089, 3.212, -1.680, -2.417, 1.596, 1.882, -0.268, 2.049, -3.129, 0.258, 0.614, -4.173, -0.778, -3.374, 1.579, -1.283, -4.732, 0.542, 1.149, -1.780, -1.014, 2.512, -5.223, 1.497, 0.674, 0.100, 3.212, 1.078, 2.644, 4.263, -4.226, 2.413, 1.418, 0.282, 0.282, 1.196, 0.863, 2.476, -3.181, 0.804, 0.486, 0.549, -2.185, 2.024, 0.225, 0.055, -3.603, 1.276, 0.120, 0.120, -1.718, 0.317, 2.429, -0.776, -2.152, 4.276, 0.983, -1.506, -1.695, 3.458, 0.050, 2.256, -2.234, 2.405, 0.499, -0.855, 1.274, 1.808, -3.386, 2.287, 1.061, 0.497, -0.930, 0.444, 0.470, 2.022, -2.146, -3.758, 1.315, -1.449, -1.297, 2.517, -1.044, -1.167, -3.717, -1.755, -1.175, -1.485, 1.058, -2.361, 0.946, -2.617, -2.390, 1.236, 1.423, 3.317, 2.751, 0.711, -3.442, -1.978, 2.117, -6.257, 1.965, -1.987, 3.308, -1.085, 3.278, -4.239, 1.926, 2.476, 1.196, -1.083, 2.629, -0.769, -6.665, 4.983, -2.277, -2.645, 0.874, -0.868, -0.868, -3.358, 2.208, 1.742, 2.652, 1.577, 2.023, 2.035, 3.004, -1.447, 2.325, 0.719, 2.840, -2.938, 2.173, 1.487, 2.377, -1.961, 1.428, 4.626, 0.659, 2.290, -0.781, -0.544, 2.168, -2.294, 2.604, 0.820, 0.996, -6.849, 1.787, 2.404, -0.509, 1.217, 0.540, -2.845, 0.077, 1.913, 1.089, -1.920, 0.533, -7.241, 2.520, -2.839, -2.417, 2.882, 3.238, -1.741, 2.225, 3.349, -3.852, -9.056, 0.699, 0.410, -1.823, -2.957, 3.448, 2.989, -1.362, 2.709, 2.132, -1.552, 3.051, 1.261, -3.026, -1.303, 1.578, 0.189, -0.692, 2.432, -1.630, 1.240, -1.013, -3.690, 0.437, -2.541, -0.869, -1.955, 1.190, -2.258, 0.346, -1.488, 2.888, -2.229, -0.681, -0.019, -3.431, -0.027, -3.909, 2.657, 1.459, -4.085, -5.003, -4.968, 0.685, 1.337, -0.662, 3.780, 1.152, -3.865, 3.391, 0.367, 0.999, -0.230, 2.909, -0.561, 3.035, 1.495, 3.658, 1.087, -1.640, -3.549, 0.169, 0.070, 2.268, -2.150, 1.698, -2.979, -2.101, 3.199, 2.177, 2.686, 1.622, -5.132, 1.605, 2.568, -0.861, 1.648, -1.567, 3.445, -0.252, -2.161, -3.635, 3.753, 1.068, 4.822, 0.854, -0.401, -5.725, 1.257, -3.742, -2.828, 0.478, 2.593, 3.459, 0.858, 2.641, -2.592, -4.324, -0.726, 1.335, -2.592, 2.164, 0.532, 3.709, 1.864, -4.042, 1.659, 1.569, 4.928, 0.086, 1.430, 1.547, 2.902, 0.081, 0.988, -0.332, -4.245, -0.901, 1.783, 0.882, 1.282, 2.031, 3.417, 1.123, 3.580, -3.493, 2.376, 0.098, -3.829, 1.636, -4.928, -3.766, 1.633, -2.030, -0.141, 1.279, -3.500, 2.257, -2.777, 0.209, -1.118, -2.158, 1.460, 2.555, -0.609, -3.959, 0.797, 3.736, 3.346, 1.545, 0.580, 0.239, 2.389, -0.782, 2.283, 3.090, -3.884, 3.805, 0.732, 2.506, 2.833, 0.234, 2.209, -1.085, 1.269, 0.517, -1.546, -0.010, 2.448, -3.164, 1.460, 1.867, 3.300, -2.211, 0.802, 2.972, 2.459, -0.913, -5.543, 2.271, 0.005, -0.638, 0.365, 0.893, 2.108, 1.139, 1.099, 3.283, -4.968, 2.674, -3.539, 3.198, 0.513, -2.612, -3.885, 1.364, 1.605, 0.381, 3.305, -0.366, -1.094, 0.259, -0.062, 2.325, 1.309, -1.986, -1.650, 0.700, 1.479, 0.927, 2.927, -3.059, -2.926, 1.077, -2.247, -2.299, 1.517, -0.105, 1.076, 4.152, -5.428, 0.400, -2.111, 1.656, 0.621, 3.290, 0.527, 2.981, 2.480, 2.383, -6.996, -1.085, -0.913, 3.640, 2.078, 1.402, 1.172, 2.536, -0.537, 3.341, -6.496, 2.424, -0.876, -0.871, 2.094, -4.310, 1.356, -0.534, -0.527, 4.225, -3.699, -1.682, -3.744, 2.159, -5.024, 2.124, 2.299, 2.100, 2.695, -0.052, -7.360, 1.975, -2.932, 1.538, -2.237, 2.417, 0.630, -5.463, 0.622, -2.348, -3.669, -2.061, -4.124, -0.378, 0.831, -1.983, 0.714, 2.856, 1.403, -0.081, 2.936, 1.486, 0.328, -4.346, 0.786, 0.237, 0.746, 1.695, -4.482, 1.909, -0.219, 0.382, 0.112, -5.437, -0.820, 0.402, -4.683, -3.719, 1.709, 3.795, 1.481, 3.334, 3.438, -0.384, 0.095, 2.141, 2.934, -5.265, 1.656, -4.117, -3.816, -1.234, -0.334, -0.753, 0.140, 0.496, 2.896, 0.886, -4.655, 1.962, 0.788, -5.318, 1.563, 3.316, -3.984, 2.332, -1.853, -0.020, -0.295, -0.557, 0.686, -5.416, 0.386, -3.295, 1.690, 3.566, 0.200, 3.197, -0.828, -0.907, 0.224, 3.366, -2.241, 1.015, -0.241, -3.537, -0.025, 2.446, 2.441, -1.811, 2.018, 1.580, 2.799, 0.922, -0.122, 1.498, -0.611, 0.935, 0.589, 1.842, -3.524, 0.329, 2.690, 4.342, -2.212, 1.671, -1.995, 0.937, 3.887, 1.109, 2.254, 1.297, 2.932, 1.713, 0.404, 5.559, 0.615, 1.191, 4.743, 1.000, 0.446, 2.289, -0.822, 2.361, 0.195, 2.860, 3.613, -0.689, -4.822, 2.117, 3.026, 0.306, -3.832, 3.226, 0.778, 0.864, -5.133, 1.590, 0.339, 1.700, 0.660, 0.596, 1.705, 2.031, 4.240, -2.967, 3.760, -0.172, 3.018, 1.053, 0.933, 3.304, -0.738, 1.782, -3.674, 0.236, 0.236, -0.503, 2.108, -2.517, 2.135, 5.373, -0.396, -1.705, -0.426, -1.964, 0.632, 1.573, 2.160, -2.282, -2.938, 2.816, -0.502, 3.055, 2.982, 4.100, 2.213, 0.153, -3.797, 1.914, 1.483, 1.271, -1.155, 3.264, -2.975, 2.577, 0.685, 4.114, 3.070, 1.642, 1.019, -1.023, 2.646, 1.261, -1.131, -5.122, -1.777, -2.860, 1.814, 0.197, -0.382, 1.833, 2.246, 0.957, 2.018, -7.249, 3.010, 1.394, 0.971, 1.392, -0.125, -3.557, -0.331, 0.776, 1.136, 3.205, -1.502, 2.626, -2.591, 1.002, 1.862, -0.633, 0.871, 2.719, 3.356, 3.746, -3.041, 1.255, -5.136, 0.870, 2.353, 4.443, 0.316, 3.855, -0.570, 0.523, -0.516, -4.420, 3.231, 1.919, 2.463, 0.418, -1.311, 2.811, -2.519, 3.569, 1.360, 2.692, -0.494, 2.144, 1.098, 1.290, 3.284, -1.243, 2.896, -1.672, -0.576, -3.774, 2.308, -0.022, -5.072, 2.111, 3.434, -1.632, 3.414, 2.150, 3.222, -2.827, 2.421, 0.159, 0.398, 2.963, -0.355, -0.066, 2.063, -0.057, 0.677, -0.490, 3.569, 0.040, 0.999, 2.930, -4.197, 3.406, 2.461, -1.221, 1.009, -0.429, 1.474, 0.813, 1.071, -0.043, -6.761, 2.989, 0.780, 1.398, -4.478, 3.276, 0.536, -3.533, 2.206, 2.336, 1.631, 2.348, 0.713, 1.078, -1.573, 2.478, 3.287, -4.027, 2.004, -3.461, 1.200, 2.397, -2.458, 1.625, 2.540, 1.667, 1.693, 3.184, -1.930, 3.423, 1.315, 2.772, -2.259, 5.598, 0.510, -0.708, 1.294, -6.806, 2.338, -2.350, 2.082, -1.685, 2.743, -3.517, 3.466, 0.149, -1.856, 1.422, -0.625, 2.249, -4.738, -2.624, -2.554, -0.457, -3.643, 2.720, 0.821, -5.004, 3.203, 2.172, 4.501, 0.938, -2.305, 2.917, -0.538, 4.112, -2.863, 0.564, 1.281, 0.876, 3.532, 2.239, 1.998, -2.737, 2.569, 2.236, -3.207, -1.504, -6.791, -3.054, -1.619, -5.053, -6.781, 1.765, -3.628, -1.459, 1.801, -1.006, 2.320, 0.421, -0.930, 1.067, 1.371, 1.983, -0.742, 2.129, 1.061, -2.101, 2.592, 3.485, 2.138, 0.741, 2.888, -2.001, 2.215, -3.382, -1.841, -0.884, -3.714, -0.848, -5.741, -0.445, 2.198, 3.819, 1.690, 0.907, 1.210, -1.593, 2.408, -6.562, -0.246, 2.643, 0.944, -0.945, 2.540, -2.018, 0.735, -1.358, 1.690, 0.343, 3.502, 4.237, 1.788, -3.005, 1.693, -1.832, -0.164, 2.828, -1.141, 2.273, -0.868, 2.177, -2.964, 0.352, -1.378, -3.808, 1.669, 4.041, -3.764, 0.708, 4.224, 2.242, 3.578, 3.269, 0.976, 0.221, 0.004, -1.288, 3.512, -5.327, -1.325, 0.349, 0.770, 2.315, 0.826, -0.240, -3.089, 1.637, 3.462, -0.661, 1.331, -1.416, -3.094, 0.115, 1.475, 1.842, 0.755, -4.989, 4.233, 0.985, -0.306, -4.636, 2.423, -2.816, -1.227, 2.238, 0.222, -3.996, 2.798, 1.934, 1.494, 1.193, 0.615, 0.293, -1.916, 3.559, -2.014, -3.023, -2.412, 3.088, -2.694, 0.881, 0.264, 0.960, 1.411, -3.354, 2.910, 3.315, -2.910, -4.117, 0.587, 1.127, 0.607, 0.227, -2.645, 3.025, 1.846, 2.535, -4.851, 2.031, -0.402, 2.725, 0.561, 2.664, -0.739, -1.403, -2.275, -1.605, 0.018, 2.527, -3.265, -1.637, 1.654, -3.263, 2.309, 0.092, -2.710, 1.005, 0.644, 3.891, -6.831, 2.373, -4.573, -5.954, 1.231, 0.069, -5.847, -0.431, 2.507, -2.842, 3.673, 1.205, 3.347, 3.040, 2.368, 2.075, -1.935, -3.253, 2.205, -1.093, 1.678, 3.275, -0.912, 0.577, 1.906, 3.335, 2.080, -5.910, 1.466, -2.409, -3.476, -3.583, -1.944, -1.796, 2.886, -2.654, -1.103, -5.871, 1.217, -0.546, 1.922, -3.666, 4.129, 1.118, -1.756, 2.063, -0.072, 1.850, 2.525, -3.990, 2.251, -6.665, 3.269, -6.478, -1.293, 0.136, -2.379, -4.102, 3.915, -0.567, -2.733, -1.533, 2.214, 1.776, -2.624, -0.368, -0.605, 1.269, 1.084, 2.421, -1.517, 1.225, 2.628, 2.902, 2.177, 2.122, 1.134, -5.807, 3.388, -1.065, 1.372, -0.217, 3.232, 1.201, 1.378, 1.471, 0.863, 2.908, 2.920, 6.234, 2.238, -2.374, -1.118, 1.188, 1.328, -2.725, 1.152, 1.304, -0.509, 1.350, -2.050, -1.345, -2.370, 0.272, 2.808, 0.949, -1.695, -2.358, -1.870, -5.007, -0.013, -2.529, -0.456, 1.005, 2.617, -7.648, 0.084, 3.039, 3.509, 3.295, -7.053, 3.294, -4.229, 2.884, 2.146, 3.014, 3.240, 1.152, -3.599, 0.540, 1.325, 2.032, -0.244, 2.500, 1.175, -0.769, 2.466, -2.161, -2.535, 4.185, -4.561, 1.735, -0.181, 2.616, 3.018, -2.359, 2.330, -2.713, -2.156, 0.201, -0.414, 0.888, 1.556, -4.011, 1.626, 4.159, -2.030, -2.397, 2.329, -0.689, -5.420, 1.792, -3.203, 3.597, 0.460, 1.330, -2.927, -0.974, 1.129, 1.544, 1.603, -0.655, 0.580, -2.398, -0.424, -1.002, 4.277, 1.972, 2.032, 4.791, 0.867, 2.280, -1.850, -2.475, 1.782, -1.240, 1.641, 1.553, -1.098, 2.005, -0.231, 1.627, -1.716, -1.086, 1.389, -1.941, 2.186, 2.277, 4.642, 1.509, 2.306, 1.369, -3.478, 3.298, 2.138, 1.825, -1.348, -0.684, -5.469, 1.238, -0.250, 3.750, -5.651, 0.299, 1.981, 1.449, 2.708, 0.457, 4.256, 0.228, 0.435, -0.374, 1.138, 0.314, 2.166, 0.682, -3.792, -0.030, 0.721, 4.886, -4.014, -3.009, 2.051, 1.398, -2.552, 1.898, 1.881, 1.666, -2.435, 2.245, 2.133, 1.307, 2.585, -6.184, 1.346, -2.255, 4.058, 1.068, 0.518, 1.075, 3.820, 0.542, 2.240, 0.525, 1.467, 4.098, 1.989, 1.982, 2.595, -0.391, -2.921, 1.113, 1.281, -2.205, 0.184, 0.840, 3.247, 0.026, 2.776, 3.149, 3.137, 2.272, 2.583, -1.552, -1.039, 3.492, 3.142, 1.708, 1.178, 1.990, -2.478, 2.589, 2.003, 1.159, 1.007, 2.520, 1.483, 1.876, 0.921, 1.245, 2.652, 1.928, -1.790, -2.072, 2.107, 2.000, 2.185, 0.517, 2.862, -1.801, -0.591, 0.250, -0.773, -4.417, -2.084, -3.962, 1.273, -0.050, 0.073, -4.335, 1.374, -1.540, 0.210, -0.534, 1.982, -1.268, 2.242, 3.729, -7.320, 2.060, -0.533, 1.542, 0.125, -1.853, 2.999, 2.156, -2.971, 0.956, 0.698, 1.189, 1.468, 1.776, 2.225, -3.276, 2.329, 3.816, 1.200, -1.716, 2.953, -1.028, -2.277, 0.987, 0.862, 3.386, 0.733, -1.086, -3.415, -1.109, 2.050, 1.150, 2.046, -0.392, 2.508, 2.043, -4.023, 3.117, -0.860, 0.174, 1.379, 0.119, 2.267, -3.302, -4.082, -0.050, 0.730, 1.634, -0.452, 3.283, 2.347, 2.176, 0.957, -1.493, 2.575, 1.644, -2.305, 2.760, 3.301, 3.408, 0.611, 3.743, -0.396, 2.361, -3.513, 4.973, 1.769, 1.712, 1.250, 1.708, -0.373, 0.800, 2.342, -2.199, -1.073, -0.497, -2.184, 0.712, -0.593, 2.026, -2.642, 1.926, -3.013, 1.144, 0.817, 4.482, -4.126, -3.755, 3.125, -6.250, 2.693, -0.835, -0.536, 0.041, 0.672, -0.099, 1.499, 1.818, 0.962, 3.308, -2.998, -1.651, -5.185, 3.844, -1.014, 2.037, -0.802, 2.493, 1.502, 1.850, -2.540, -5.598, 2.771, -0.245, -3.751, 0.945, 0.830, -0.357, 2.761, -0.889, -1.272, 3.033, 0.543, 0.776, 4.391, -4.310, 2.131, 2.908, -5.714, 2.973, 3.367, 1.964, -1.640, 1.909, -6.080, 2.142, -1.430, 2.637, -1.253, 0.403, 1.029, 3.767, -1.100, -5.994, 4.213, 2.273, 1.729, 2.340, 0.600, 1.435, 2.374, -1.354, 0.658, 1.007, -5.747, 3.294, -2.391, 2.525, -2.102, 1.998, 1.409, 0.271, 1.389, 0.831, 3.559, 3.481, 0.608, 2.710, -0.895, -2.623, 2.676, -4.016, 1.231, -1.978, 2.546, -5.805, 0.651, 0.662, 3.303, 1.164, 2.780, 1.460, -2.622, 0.155, 1.568, -0.554, 2.194, 1.622, -1.221, 2.703, 1.610, -4.066, 0.679, 2.893, 4.772, 0.443, 0.794, 1.721, 0.076, 0.775, -4.176, -4.868, -1.569, 1.526, 1.038, 0.944, 1.471, 2.035, 3.243, 3.340, 1.501, 2.769, 0.931, 0.704, 2.368, 0.939, -5.394, -2.025, 1.200, -5.182, -0.919, 0.919, 0.336, -1.696, -0.700, -0.981, 1.841, 1.072, 1.730, -5.189, 2.739, 3.199, -0.607, 1.222, -1.503, 1.609, 0.714, 0.883, 2.062, -0.310, 3.583, 0.355, 3.346, -1.181, 3.439, 0.222, -1.390, 2.297, 3.506, -6.941, 3.913, 0.651, 1.251, 1.813, 0.249, -0.042, 0.126, 3.410, 3.477, -5.514, 3.121, -1.508, -1.201, 2.084, -6.177, -0.505, -0.183, -0.663, -2.557, 1.992, 0.797, 0.152, 2.572, 0.183, -4.590, 4.819, 1.389, 1.446, -0.595, 1.405, 4.197, 3.239, 2.248, 2.689, 0.438, 0.544, 4.356, 1.259, -0.017, -3.933, 0.406, 4.018, -0.241, 1.468, 1.439, -2.337, 2.507, -1.269, 0.712, 1.326, -3.827, 1.632, 1.190, 2.174, 1.105, -2.058, 0.917, 1.107, 1.661, -4.460, 3.428, -3.724, 3.972, 1.676, 3.517, 0.967, -2.672, -5.415, -0.077, -1.679, 2.968, 1.188, 0.829, 2.757, 4.479, -1.345, 0.330, -3.539, 2.076, 2.262, 3.790, 1.660, -0.656, 0.649, -4.506, 1.079, -1.867, 1.308, 3.315, -1.250, 0.468, -0.273, -0.636, 2.811, -3.043, 0.431, 0.698, 2.333, -1.958, 1.656, 0.556, -0.522, -1.297, 0.990, 3.102, 2.402, 2.357, -2.415, 3.670, -3.277, 1.098, -5.876, -0.829, -3.396, 2.726, 0.036, 2.273, 2.317, -0.732, 2.208, 2.866, 2.806, -6.000, 0.188, 1.964, 3.363, -0.757, -2.174, 1.867, -0.560, 2.410, 1.540, 0.186, -0.198, 1.053, -7.278, 2.591, 1.447, 1.443, 2.685, -4.801, 2.957, 0.136, 1.189, -1.949, -1.834, 1.633, 2.324, 0.101, 0.428, 3.574, 2.497, 1.944, -0.141, 0.677, -3.870, 2.298, 1.875, 1.967, -0.215, 3.210, 2.893, 2.604, 0.707, 4.220, 1.493, -2.328, 0.642, 3.649, -3.077, 2.058, 2.282, 0.774, -0.775, 1.679, 1.204, 0.957, 0.813, 0.151, 4.628, -0.758, 0.827, 3.750, 3.387, -0.082, 3.556, -1.598, 1.067, 0.605, -5.621, -3.126, 1.873, -5.790, 1.154, -0.403, 0.856, -0.109, 3.094, 1.291, 2.991, 1.358, 0.337, -0.276, -6.445, 2.528, 1.765, -2.114, 1.316, -4.016, 1.100, 2.923, -3.391, 3.110, 1.353, 4.277, -3.205, 1.243, -1.083, 3.867, 2.788, -4.569, 0.037, -0.493, -0.467, -3.002, -1.229, 1.371, -0.834, 1.740, -1.267, 3.157, -1.012, 3.558, 0.308, -4.713, 2.998, 1.007, -0.338, 0.707, 0.811, 3.639, -1.203, -2.797, 3.411, -2.701, 0.377, 2.050, 1.113, -2.312, 0.974, -3.422, 1.626, -0.610, 1.438, -1.073, -1.032, -4.511, 4.269, -2.085, 1.807, -3.099, 0.379, 4.240, 1.070, -0.986, -0.315, -0.237, 4.862, 3.761, -0.009, -2.548, 1.148, 1.263, -2.089, 1.777, -4.053, 2.861, -0.109, 3.391, -0.904, 1.902, -3.088, -4.590, -0.176, -2.093, 0.638, -0.500, -0.557, -2.562, 3.355, 0.888, 2.981, -3.889, -2.811, 2.021, -1.119, 0.590, 0.734, 2.687, 3.597, 1.633, 3.065, 1.535, -0.080, -0.968, 3.293, 4.388, -4.006, 0.366, -3.821, 0.585, 1.314, 4.799, -2.438, -0.667, -4.639, -0.573, -0.782, 2.765, 1.372, -2.189, 2.049, 2.568, 5.085, -3.206, 1.134, 1.955, 1.087, -4.671, -4.828, 2.055, 0.226, 0.943, 1.409, 0.251, 2.375, -2.974, -0.500, -0.954, 2.667, -1.886, 1.639, -1.581, 1.979, -2.350, 1.107, -0.693, -3.759, 1.521, -0.758, 0.869, -0.930, 1.821, 2.768, -2.066, -3.932, 3.867, 2.336, 3.160, -0.371, 2.052, 0.533, -0.882, 1.920, 2.810, -0.707, 0.814, -0.899, 2.907, 0.326, 6.311, 3.338, 1.148, 2.567, 0.322, -0.618, 3.136, 1.488, -0.450, -3.532, 0.092, -5.982, 2.860, 1.519, 2.225, -1.745, 2.290, -4.899, 2.321, -0.408, 2.753, 0.237, -1.413, 3.582, -0.334, 3.708, 1.387, 1.315, 0.985, 2.531, -0.826, 2.618, -0.320, 0.591, 2.800, 1.183, 2.370, -0.129, 2.020, 3.387, -2.972, 1.293, 0.822, 3.952, 2.411, 3.184, 1.063, -0.795, 3.782, 0.009, 1.803, 4.126, -0.985, -1.098, -1.534, 2.009, -6.268, -2.068, 2.405, 1.655, -0.590, 3.098, 1.528, 2.044, -3.914, -5.965, 3.617, -5.606, 2.180, -2.923, 1.688, 1.501, 0.139, -4.586, 1.343, -2.883, -1.564, -0.336, -5.028, 1.580, -0.258, -1.718, -2.480, -1.545, -1.191, -3.483, -1.741, 2.108, -0.776, 1.390, 2.587, -0.975, 2.431, 1.289, 0.010, 0.121, -0.075, -1.201, -1.306, 0.492, -1.030, 3.232, -3.116, 3.958, 2.256, -4.106, 2.339, 0.270, 2.458, 2.195, -0.842, -4.079, -0.664, 1.038, 0.048, -1.239, -2.613, 0.279, 0.387, -0.223, 3.359, -3.736, -1.354, -5.245, 0.768, 1.423, 0.363, 2.190, -0.155, 0.068, 1.054, 0.416, 0.679, 1.744, -5.776, -1.792, -1.262, 3.083, 3.837, 1.793, 1.625, 3.574, -5.161, 4.048, 2.356, 0.346, -0.840, -2.847, 2.759, -5.589, 2.066, 1.187, 1.860, -1.536, 1.091, 3.635, 1.092, 0.730, -1.501, 0.973, 0.736, 1.185, 2.718, -2.153, -1.481, -0.382, -4.399, 0.170, -6.275, -0.707, -0.709, 0.160, -1.642, 4.138, 2.415, 2.052, 1.419, 1.411, 1.086, -0.727, -0.648, -3.622, 2.988, 0.935, -0.654, 0.103, -1.345, 3.106, 2.257, -2.617, -1.071, 1.948, 0.502, 1.949, 1.340, 0.443, 1.755, -5.092, 3.050, 0.663, -5.280, 2.386, 1.064, -2.196, 3.817, 0.555, -1.636, 2.288, 1.186, 2.131, -1.009, 0.526, 3.205, 1.367, -1.111, 1.426, 2.319, -6.940, 1.085, -3.948, 0.897, -2.331, 1.108, 2.575, -0.095, 1.939, -2.862, 2.908, -1.810, 4.279, -0.832, 3.927, -1.647, -4.184, -3.663, 1.366, 0.987, 0.535, -0.921, -1.049, 2.653, 1.529, 0.978, 2.441, 3.381, -0.268, 1.400, 0.360, 2.883, -0.730, 2.783, 0.349, 1.543, 2.914, 2.690, -1.895, 2.514, 2.336, 0.046, 2.353, -1.151, -1.151, 1.897, 1.157, 3.767, 2.091, -1.296, 2.085, 0.607, 3.493, 1.115, 2.631, 1.939, -1.081, 0.927, -0.767, -0.497, 2.362, -3.158, -0.332, 1.755, 2.829, -0.338, 2.507, 3.686, 1.843, -2.474, -0.977, 1.958, -1.894, 1.536, -6.220, 2.031, -3.434, 1.374, -0.037, 2.015, 2.567, -0.463, 2.735, 4.240, -2.683, 1.646, 2.613, 1.549, -2.539, 2.362, 1.842, 2.599, -1.526, 2.715, 0.934, 1.864, -0.444, 1.904, -1.795, 1.640, 3.308, -1.319, 0.150, -2.292, -2.621, 0.804, 1.838, -3.296, 1.969, -1.209, 2.541];
+
+        margin_hist = ({top: 20, right: 20, bottom: 30, left: 40});
+
+        width_hist = $('#apadb_histo').attr('width');
+        height_hist = $('#apadb_histo').attr('height');
+
+
+        x_hist = d3.scaleLinear()
+            //.domain(d3.extent(data)).nice()
+            .domain([-8.0, 8.0]).nice()
+            .range([margin_hist.left, width_hist - margin_hist.right]);
+
+        bins = d3.histogram()
+            .domain(x_hist.domain())
+            .thresholds(x_hist.ticks(40))(data);
+
+        y_hist = d3.scaleLinear()
+            .domain([0, d3.max(bins, d => d.length)]).nice()
+            .range([height_hist - margin_hist.bottom, margin_hist.top]);
+
+        xAxis_histo = g => g
+            .attr("transform", `translate(0,${height_hist - margin_hist.bottom})`)
+            .call(d3.axisBottom(x_hist).tickSizeOuter(0))
+
+        yAxis_histo = g => g
+            .attr("transform", `translate(${margin_hist.left},0)`)
+            .call(d3.axisLeft(y_hist).ticks(2).tickFormat(""))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.select(".tick:last-of-type text").clone()
+                .attr("x", 4)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("Human Isoform Scores"));
+
+
+        bar = d3.select('#apadb_histo').append("g")
+            .attr("fill", "black")
+            .selectAll("rect")
+            .data(bins)
+            .join("rect")
+              .attr("x", d => x_hist(d.x0) + 1)
+              .attr("width", d => Math.max(0, x_hist(d.x1) - x_hist(d.x0) - 1))
+              .attr("y", d => y_hist(d.length))
+              .attr("height", d => y_hist(0) - y_hist(d.length))
+              .attr("fill", function(d){if(pas_logit_ref >= d.x0 && pas_logit_ref < d.x1) { return "gold"; } else { return "black"; } });
+
+        
+        d3.select('#apadb_histo').append("g")
+              .call(xAxis_histo);
+          
+        d3.select('#apadb_histo').append("g")
+              .call(yAxis_histo);
+
+      }
+
+
+
+
+
+
+    //}
+
+
+
+
+    d3.select('#gene_symbol')
+            .on('change', function () {
+                gene = $('#gene_symbol').val();
+
+                //socket.send("getevents_" + gene);
+                $.ajax({
+                  url: "https://apa.cs.washington.edu/api/genes/" + gene + "?database=" + database_id,
+                  type: 'GET',
+                  dataType: 'json',
+                  success: get_sites
+                });
+
+                $('#apadb_list_button').text("pA Signals in " + gene)
+                $('#apadb_list_button').prop( "disabled", true );
+
+                $('#chosen_gene').text(gene);
+
+            });
+
+      d3.select('#predict_button')
+              .on('click', function () {
+
+                  ref_seq = $('#ref_seq').val();
+                  var_seq = $('#var_seq').val();
+                  cut_start = $('#cut_start').val();
+                  cut_end = $('#cut_end').val();
+
+                  //socket.send("mutmap_" + ref_seq + "_" + cut_start + "_" + cut_end);
+
+                  $.ajax({
+                    url: "https://apa.cs.washington.edu/api/variant?ref_sequence=" + ref_seq + "&var_sequence=" + var_seq + "&cut_start=" + cut_start + "&cut_end=" + cut_end,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: get_variant
+                  });
+
+              });
+
+
+      // Connection opened
+      //socket.addEventListener('open', function (event) {
+      //socket.send("getevents_PTEN");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes/PTEN" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_sites
+      });
+
+      //socket.send("getseq_PTEN.1");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/sites/PTEN.1" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_site
+      });
+
+      //Populate gene symbol dropdown
+      //socket.send("getgenes");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_genes
+      });
+
+
+
+
+/*
+    svgContainer.append("line")
+ 8                         .attr("x1", 5)
+ 9                         .attr("y1", 5)
+10                         .attr("x2", 50)
+11                         .attr("y2", 50)
+12                         .attr("stroke-width", 2)
+13                         .attr("stroke", "black");*/
+
+    </script>
+
+  </body>
+</html>
