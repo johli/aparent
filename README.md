@@ -5,7 +5,7 @@ This repository contains the code for training and running APARENT, a deep neura
 
 APARENT was described in [Bogard *et al*, Cell 2019 in press](https://doi.org/10.1016/j.cell.2019.04.046).
 
-APARENT was trained on >3.5 million randomized 3' UTR poly-A signals expressed on mini gene reporters in HEK293.
+The model was trained on >3.5 million randomized 3' UTR poly-A signals expressed on mini gene reporters in HEK293.
 
 Forward-engineering of new poly-A signals is done using the included SeqProp (Stochastic Sequence Backpropagation) software, which implements a gradient-based input optimization algorithm and uses APARENT as the predictor.
 
