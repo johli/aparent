@@ -27,11 +27,14 @@ python setup.py install
 ```
 
 #### APARENT requires the following packages to be installed
+- Python >= 3.6
 - Tensorflow >= 1.13.1
 - Keras >= 2.2.4
 - Scipy >= 1.2.1
 - Numpy >= 1.16.2
 - Isolearn >= 0.2.0 ([github](https://github.com/johli/isolearn.git))
+- [Optional] Pandas >= 0.24.2
+- [Optional] Matplotlib >= 3.1.1
 - [Optional] SeqProp >= 0.1 ([github](https://github.com/johli/seqprop.git))
 
 ### Usage
