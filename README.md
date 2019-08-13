@@ -81,6 +81,7 @@ These two notebooks illustrate how to use the APARENT Keras models to predict AP
 
 [Notebook 1: APA Isoform & Cleavage Prediction](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_isoform_prediction.ipynb)<br/>
 [Notebook 2: APA Variant Effect Prediction](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_variant_prediction.ipynb)<br/>
+[Notebook 3: PolyA Peak Detection](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/examples/aparent_example_pas_detection.ipynb)<br/>
 
 *Note*: This model version is not the one evaluated in the paper; this version has been trained on all MPRA libraries (no libraries have been held out) in order to make the best APA predictor possible.
 
