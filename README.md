@@ -3,11 +3,15 @@
 # APARENT - APA Regression Net
 This repository contains the code for training and running APARENT, a deep neural network that can predict human 3' UTR Alternative Polyadenylation (APA), annotate genetic variants based on the impact of APA regulation, and engineer new polyadenylation signals according to target isoform abundances or cleavage profiles.
 
-APARENT was trained on >3.5 million randomized 3' UTR poly-A signals expressed on mini gene reporters in HEK293.
+APARENT was described in [Bogard *et al*, Cell 2019 in press](https://doi.org/10.1016/j.cell.2019.04.046).
+
+The model was trained on >3.5 million randomized 3' UTR poly-A signals expressed on mini gene reporters in HEK293.
 
 Forward-engineering of new poly-A signals is done using the included SeqProp (Stochastic Sequence Backpropagation) software, which implements a gradient-based input optimization algorithm and uses APARENT as the predictor.
 
 Further below on this page are links to IPython Notebooks containing all of the analyses performed in the paper. There is also a link to the repository containing all of the processed data used by the notebooks.
+
+Contact *jlinder2 (at) cs.washington.edu* for any questions about the model or data.
 
 ### Web Prediction Tool
 We have hosted a publicly accessible web application where users can predict APA isoform abundance and variant effects with APARENT and visualize the results.
@@ -23,11 +27,14 @@ python setup.py install
 ```
 
 #### APARENT requires the following packages to be installed
+- Python >= 3.6
 - Tensorflow >= 1.13.1
 - Keras >= 2.2.4
 - Scipy >= 1.2.1
 - Numpy >= 1.16.2
 - Isolearn >= 0.2.0 ([github](https://github.com/johli/isolearn.git))
+- [Optional] Pandas >= 0.24.2
+- [Optional] Matplotlib >= 3.1.1
 - [Optional] SeqProp >= 0.1 ([github](https://github.com/johli/seqprop.git))
 
 ### Usage
@@ -123,9 +130,9 @@ Evaluation of APARENT on the Random MPRA libraries, and Convolutional Layer 1 & 
 ### SeqProp APA Engineering Notebooks
 Engineering of PAS sequences according to target isoform and cleavage objectives (and DeepDream).
 
-[Notebook 1: Target Isoform Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_isoform_optimization_legacy.ipynb)<br/>
-[Notebook 2: Target Cleavage Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_cleavage_optimization_legacy.ipynb)<br/>
-[Notebook 3: Dense Layer Sequence Visualization (DeepDream-Style)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/seqprop/seqprop_aparent_deepdream_optimization_legacy.ipynb)<br/>
+[Notebook 1: Target Isoform Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/misc/run_seqprop/seqprop_aparent_isoform_optimization_legacy.ipynb)<br/>
+[Notebook 2: Target Cleavage Sequence Optimization](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/misc/run_seqprop/seqprop_aparent_cleavage_optimization_legacy.ipynb)<br/>
+[Notebook 3: Dense Layer Sequence Visualization (DeepDream-Style)](https://nbviewer.jupyter.org/github/johli/aparent/blob/master/misc/run_seqprop/seqprop_aparent_deepdream_optimization_legacy.ipynb)<br/>
 
 ### Designed MPRA Analysis Notebooks
 Analysis of the Designed MPRA library, including Forward-engineering, Native PAS prediction, and Variant analysis.
