@@ -10,6 +10,9 @@ from keras.models import Sequential, Model, load_model
 import tensorflow as tf
 
 from load_apadb_model_helper import build_apadb_model
+from aparent_predictor import get_aparent_encoder, find_polya_peaks, score_polya_peaks
+
+import urllib
 
 
 app = Flask(__name__, static_url_path='')
@@ -64,6 +67,13 @@ def variant_view():
         return render_template('pas_variant_bootstrap_v2_zoom.html')
     else :
         return render_template('pas_variant_bootstrap_v2.html')
+
+
+@app.route('/detect')
+def detect_view():
+    query_parameters = request.args
+    
+    return render_template('detect_polya_bootstrap_v2_zoom.html')
 
 class OneHotEncoder :
     def __init__(self, seq_length=100, default_fill_value=0) :
@@ -462,6 +472,122 @@ def predict_mutagenesis() :
         {
             "cut_ref": [round(cut, 6) for cut in cut_ref.tolist()],
             "cut_vars": np.round(cut_vars, 6).tolist()
+        }
+    )
+
+
+aparent_encoder = get_aparent_encoder(lib_bias=4)
+
+@app.route('/api/detect', methods=['GET', 'POST'])#, methods=['GET'])
+def detect_polya() :
+
+    query_parameters = request.args
+
+    seq = 'X' * 205
+
+    if request.method == "POST" :
+        seq = request.form.get('sequence')#request.json['sequence']
+    else :
+        seq = query_parameters.get('sequence')
+
+
+    sequence_stride = 1
+    if query_parameters.get('stride') is not None and query_parameters.get('stride') != '' :
+        sequence_stride = int(query_parameters.get('stride'))
+
+    conv_smoothing = False
+    if query_parameters.get('smoothing') is not None and query_parameters.get('smoothing') == 'true' :
+        conv_smoothing = True
+
+    peak_min_height = 0.01
+    if query_parameters.get('minheight') is not None and query_parameters.get('minheight') != '' :
+        peak_min_height = float(query_parameters.get('minheight'))
+
+    peak_min_distance = 1
+    if query_parameters.get('mindistance') is not None and query_parameters.get('mindistance') != '' :
+        peak_min_distance = int(query_parameters.get('mindistance'))
+
+    peak_prominence = (0.01, None)
+    if query_parameters.get('minprominence') is not None and query_parameters.get('minprominence') != '' :
+        peak_prominence = (float(query_parameters.get('minprominence')), None)
+
+
+    if len(seq) < 205 :
+        seq = (seq + ('X' * 205))[:205]
+    
+    if len(seq) > 50000 :
+        seq = seq[:50000]
+
+    peak_ixs, polya_profile = find_polya_peaks(
+        aparent_model,
+        aparent_encoder,
+        seq,
+        sequence_stride=sequence_stride,
+        conv_smoothing=conv_smoothing,
+        peak_min_height=peak_min_height,
+        peak_min_distance=peak_min_distance,
+        peak_prominence=peak_prominence
+    )
+
+    peak_scores = score_polya_peaks(
+        aparent_model,
+        aparent_encoder,
+        seq,
+        peak_ixs,
+        sequence_stride=1,
+        strided_agg_mode='max',
+        iso_scoring_mode='both',
+        score_unit='log'
+    )
+
+    return jsonify(
+        {
+            "polya_profile" : [round(cut, 4) for cut in polya_profile.tolist()],
+            "peak_positions" : peak_ixs,
+            "peak_scores" : peak_scores
+        }
+    )
+
+rc_map = {
+    'A' : 'T',
+    'C' : 'G',
+    'G' : 'C',
+    'T' : 'A'
+}
+
+def reverse_complement(seq) :
+    seq_rc = ''
+    for j in range(len(seq)) :
+        seq_rc = rc_map[seq[j]] + seq_rc
+
+    return seq_rc
+
+@app.route('/api/genome', methods=['GET'])
+def get_genome() :
+
+    query_parameters = request.args
+
+    chrom = query_parameters.get('chrom')
+    start = query_parameters.get('start')
+    end = query_parameters.get('end')
+
+    reverse_compl = False
+    if query_parameters.get('rc') is not None and query_parameters.get('rc') == 'true' :
+        reverse_compl = True
+
+    url = 'http://genome.ucsc.edu/cgi-bin/das/hg19/dna?segment=' + str(chrom) + ':' + str(start) + ',' + str(end)
+    f = urllib.urlopen(url)
+    xml_body = f.read().decode('utf-8')
+    f.close()
+
+    sequence = xml_body.split("<DNA")[1].split("</DNA>")[0].split(">")[1].replace(" ", "").replace("\n", "").replace("\t", "").strip().upper()
+    
+    if reverse_compl :
+        sequence = reverse_complement(sequence)
+
+    return jsonify(
+        {
+            "sequence" : sequence
         }
     )
 

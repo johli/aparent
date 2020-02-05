@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/css/bootstrap-select.min.css">
+
+    <link rel="stylesheet" href="https://rawgit.com/Caged/d3-tip/master/examples/example-styles.css">
+    <!-- fill: green; -->
+    <style>
+
+        .active-bar {
+          stroke-dasharray: 4;
+        }
+
+        .clicked-bar {
+          stroke-dasharray: 4;
+          stroke: green;
+        }
+
+    </style>
+
+    <title>APARENT PolyA Detector</title>
+  </head>
+  <body>
+    
+  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+    <h5 class="my-0 mr-md-auto font-weight-normal">APARENT PolyA Detector</h5>
+    <nav class="my-2 my-md-0 mr-md-3">
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu">Home</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/mutagenesis">Mutagenesis</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/apa">APA Isoforms</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/pas">PAS Score</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/variant">Variants</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/detect">PolyA Detection</a>
+    </nav>
+    <a class="btn btn-outline-primary" href="https://github.com/johli/aparent">GitHub</a>
+  </div>
+    
+
+    
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+        <h2 id='loading_text'>PolyA Detector <span class="badge badge-warning">Loading...</span></h2>
+        <p class="lead">Detect and score all the polyadenylation sites of the input sequence.</p>
+
+        <div class="alert alert-primary" role="alert">
+          See usage instructions below.
+        </div>
+
+        <div class="d-flex flex-row align-items-end">
+          <div class="p-2">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="database_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Database (PolyADB V3)
+              </button>
+              <div id='database_list' class="dropdown-menu" style="height:100px; overflow-y:auto;">
+                <a href='#' class='dropdown-item' id='polyadb'>PolyADB V3</a>
+                <a href='#' class='dropdown-item' id='apadb'>APADB V2</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2">
+            <select id="gene_symbol" class="selectpicker" data-live-search="true" title="Find Gene Symbol">
+              <option data-tokens="PTEN">PTEN</option>
+            </select>
+          </div>
+
+          <div class="p-2">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="apadb_list_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
+                pA Signals in Gene
+              </button>
+              <div id='apadb_list' class="dropdown-menu" style="height:400px; overflow-y:auto;">
+              </div>
+            </div>
+          </div>
+          <div class="p-2">
+                <h5 id='chosen_gene'></h5>
+          </div>
+        </div>
+
+        <div class="d-flex flex-row align-items-end">
+          <div class="p-2">
+            <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text border-primary" id="basic-addon1">Chr</span>
+              </div>
+              <input id="chrom_inp" type="text" class="form-control border-primary input-xs" value="17">
+            </div>
+          </div>
+          <div class="p-2">
+            <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text border-primary" id="basic-addon1">Start</span>
+              </div>
+              <input id="start_inp" type="text" class="form-control border-primary" value="7589866">
+            </div>
+          </div>
+          <div class="p-2">
+            <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text border-primary" id="basic-addon1">End</span>
+              </div>
+              <input id="end_inp" type="text" class="form-control border-primary" value="7590866">
+            </div>
+          </div>
+          <div class="p-2">
+            <div class="form-group form-check">
+              <input id='rev_comp' type="checkbox" checked="true" class="form-check-input">
+              <label class="form-check-label" for="rev_comp">Minus Strand</label>
+            </div>
+          </div>
+          <div class="p-2"><button id="fetch_button" class="btn btn-success mb-3">Fetch</button></div>
+        </div>
+
+        <h3 id='chosen_site'></h3>
+        
+        <div class="d-flex flex-row align-items-end">
+          <div class="p-2">
+            <button id="moveleft_button" class="btn btn-outline-primary mb-2 float-right">&lt;</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomin_button" class="btn btn-outline-primary mb-2 float-right">Zoom In</button>
+          </div>
+          <div class="p-2">
+            <button id="zoomout_button" class="btn btn-outline-primary mb-2 float-right">Zoom Out</button>
+          </div>
+          <div class="p-2">
+            <button id="moveright_button" class="btn btn-outline-primary mb-2 float-right">&gt;</button>
+          </div>
+          <div class="p-2">
+            <p id='chosen_site_details'></p>
+          </div>
+        </div>
+
+        <svg id='cuts_svg' width='1200' height='400'></svg>
+        <br/>
+        <br/>
+
+        <div class="card border-primary" style="width: 1200px">
+          <div class="card-body">
+            <row>
+              <h5 class="card-title text-primary">Detected Peaks</h5>
+              <button id="toggle_peaks_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_peaks" aria-expanded="true" aria-controls="toggle_peaks">Show / Hide</button>
+              <!--<h6 class="card-subtitle mb-2 text-muted">PolyA Pea Detection</h6>-->
+              <p class="card-text">PolyA Site peaks detected by APARENT.</p>
+
+              <br/>
+              <div class="collapse show" id="toggle_peaks">
+                <table id="peak_table" class="table"><!-- table-hover -->
+                  <thead>
+                    <tr>
+                      <th scope="col">Peak #</th>
+                      <th scope="col">Location</th>
+                      <th scope="col">PAS Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+            </row>
+          </div>
+        </div>
+        <br/>
+
+        <div style="width: 1200px">
+            <textarea class="form-control border-primary" id="predict_field" rows="10">AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATGATTGTGGATTTTTGAGTATTATTTTATTATTGTTCGCATTGGATTGTGGATTTTTGAATATTATTTTAAAATAGTACACATACTTAATGTTCATAAGATCATCTTCTTAAATAAAACATGGATGTGTGGGTATGTCTGTACTCCTCCTTTCAGAAAGTGTTTACATATTCTTCATCTACTGTGATTAAGCTCATTGTTGGTTAATTGAAAATATACATGCACATCCATAACTTTTTAAAGAGTA</textarea>
+            <br/>
+            <div class="d-flex flex-row-reverse">
+              <div class="p-2"><button id="predict_button" class="btn btn-success mb-2 float-right">Predict</button></div>
+              <div class="p-2">
+                <div class="form-group form-check">
+                  <input id='conv_smoothing' type="checkbox" checked="true" class="form-check-input">
+                  <label class="form-check-label" for="conv_smoothing">Smoothing Kernel</label>
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Min Prominence</span>
+                  </div>
+                  <input id="min_peak_prominence" type="text" class="form-control border-primary" value="0.01">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Min Distance</span>
+                  </div>
+                  <input id="min_peak_distance" type="text" class="form-control border-primary" value="50">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Min Height</span>
+                  </div>
+                  <input id="min_peak_height" type="text" class="form-control border-primary" value="0.01">
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text border-primary" id="basic-addon1">Stride</span>
+                  </div>
+                  <input id="sequence_stride" type="text" class="form-control border-primary" value="10">
+                </div>
+              </div>
+            </div>
+            
+        </div>
+
+        <div class="card border-primary" style="width: 1200px">
+          <div class="card-body">
+            <row>
+              <h5 class="card-title text-primary">Legend</h5>
+              <button id="toggle_legend_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_legend" aria-expanded="false" aria-controls="toggle_legend">Show / Hide</button>
+              <h6 class="card-subtitle mb-2 text-muted">PolyA Site Detection</h6>
+              <p class="card-text">Explanation of values and graphics presented in the tool.</p>
+
+              <div class="collapse" id="toggle_legend">
+                <ul class="list">
+                  <li class="list-item">
+                    <b>pA Intensity</b><br/>
+                    The 3' cleavage distribution of the input sequence is shown as an orange curve. The values (pA Intensity) are non-normalized (they do not sum to 100%). Rather, pA Intensity is scaled with respect to the strength of the PAS relative to the average affinity of a distal, well-separated PAS.
+                  </li>
+                  <li class="list-item">
+                    <b>Peak Detection</b><br/>
+                    The predicted 3' cleavage distribution is smoothed, aggregated and processed, after which an automatic peak detection algorithm identifies signifant polyadenylation peaks in the signal. The detected peaks are listed in a table below the graph.
+                  </li>
+                  <li class="list-item">
+                    <b>PAS Score</b><br/>
+                    The aggregate APA isoform log odds ('strength') of each detected peak, with respect to the average affinity of a well-separated, distal PAS, are listed in the peak detection table below the graph.
+                  </li>
+                </ul>
+              </div>
+            </row>
+            <row>
+              <h5 class="card-title text-primary">Instructions</h5>
+              <button id="toggle_instructions_button" class="btn btn-outline-primary mb-2 float-right" data-toggle="collapse" data-target="#toggle_instructions" aria-expanded="false" aria-controls="toggle_instructions">Show / Hide</button>
+              <p class="card-text">Instructions on how to use the tool.</p>
+
+              <div class="collapse" id="toggle_instructions">
+                <ul class="list">
+                  <li class="list-item">
+                    <b>Choose gene and pA site</b><br/>
+                    Select the gene of interest in the dropdown list above the cleavage curve. Choosing a gene populates the dropdown to the right with the annotated pA sites of that gene. We currently provide integration with APADB (V2) and PolyADB (V3). Choosing a site populates the genome browser fields with the corresponding coordinates. Pressing 'Fetch' loads the genomic sequence.
+                  </li>
+                  <li class="list-item">
+                    <b>(Optional) Specify custom pA sequence</b><br/>
+                    Instead of choosing from a list of native human pA sites, you can paste your own custom sequence in the text area. </b>Note:</b> The sequence must be at least 205 nucleotides and at most 10,000 nucleotides.
+                  </li>
+                  <li class="list-item">
+                    <b>Adjust prediction algorithm</b><br/>
+                    The cleavage distrbution prediction algorithm works by sliding APARENT across the entire input sequence according to a user-specific stride (default stride = 10nt), and aggregating the partially overlapping pA profiles predicted from each window. You may need to adjust the parameters (Stride, Smoothing Kernel) according to your needs. Smaller strider linearly increases prediction time. The Smoothing Kernel evens out the profile by applying a gaussian filter.
+                  </li>
+                  <li class="list-item">
+                    <b>Adjust peak detection algorithm</b><br/>
+                    The peak detection algorithm is pre-configured with parameters that work well in most cases by detecting significant peaks with high specificity. You may need to adjust the parameters (Min Peak Height, Min Peak Distance, Min Peak Prominence) according to your needs.
+                  </li>
+                </ul>
+              </div>
+            </row>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+    
+  <footer class="my-5 pt-5 text-muted text-center text-small">
+    <p class="mb-1">Seelig Lab</p>
+    <a href="https://www.seeliglab.org/">Website</a> | jlinder2 (at) cs.washington.edu
+  </footer>
+
+
+
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/js/bootstrap-select.min.js"></script>
+
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.js"></script>
+
+
+    <script>
+
+    //AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT
+
+    //var socket = new WebSocket("ws://127.0.0.1:9990");
+
+
+    // Connection opened
+    /*socket.addEventListener('open', function (event) {
+        socket.send("aparent_AGATAGTGGTATAAGAAAGCATTTCTTATGACTTATTTTGTATCATTTGTTTTCCTCATCTAAAAAGTTGAATAAAATCTGTTTGATTCAGTTCTCCTACATATATATTCTTGTCTTTTCTGAGTATATTTACTGTGGTCCTTTAGGTTCTTTAGCAAGTAAACTATTTGATAACCCAGATGGATTGTGGATTTTTGAATATTAT_80_110");
+    });*/
+
+
+    
+    
+
+
+    //socket.onmessage = function(message) {
+
+    //message_json = JSON.parse(message.data);
+
+    database_id = "polyadb";
+    database_name = "PolyADB V3";
+    $('#database_list a').click(function() {
+      database_id = this.id;
+      database_name = this.innerHTML;
+      $('#database_button').html("Database (" + this.innerHTML + ")");
+
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes/PTEN" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_sites
+      });
+
+      //socket.send("getseq_PTEN.28");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/sites/PTEN.1" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_site
+      });
+
+      //Populate gene symbol dropdown
+      //socket.send("getgenes");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_genes
+      });
+
+      $('#apadb_list_button').text("pA Sites in Gene");
+      $('#apadb_list_button').prop( "disabled", true );
+
+      $('#chosen_gene').text("PTEN");
+
+    });
+
+
+    function get_sites(message_json) {
+
+        gene = $('#gene_symbol').val();
+
+        $('#apadb_list').html("");
+        var dropdown = $('#apadb_list');
+
+        for(var i = 0; i < message_json["gene_id"].length; i++) {
+          var option = document.createElement('a');
+          
+          site_type = message_json["site_type"][i]
+          if(site_type === 'Extension') {
+            site_type = 'UTR3'
+          }
+
+          option.innerHTML = "PAS " + message_json["sitenum"][i] + " (" + site_type + ")";
+          option.href = "#";
+          option.id = message_json["gene_id"][i];
+
+          //option.class = "dropdown-item";
+          option.classList.add('dropdown-item');
+
+          dropdown.append(option);
+        }
+        $('#apadb_list a').click(function() {
+            gene_id = this.id;
+            //socket.send("getseq_" + gene_id);
+            $.ajax({
+              url: "https://apa.cs.washington.edu/api/sites/" + gene_id + "?database=" + database_id,
+              type: 'GET',
+              dataType: 'json',
+              success: get_site
+            });
+
+        });
+
+        $('#apadb_list_button').prop( "disabled", false );
+
+      }
+
+      function get_genes(message_json) {
+
+        $('#gene_symbol option').remove();
+
+        for(var i = 0; i < message_json["genes"].length; i++) {
+          var option = document.createElement('option');
+          
+          option.innerHTML = message_json["genes"][i];
+          $('#option').attr("data-tokens", message_json["genes"][i])
+
+          $('#gene_symbol').append(option);
+        }
+
+        $('#gene_symbol').selectpicker('refresh');
+
+      }
+
+      function get_site(message_json) {
+
+        $('#predict_field').val(message_json["seq"]);
+        $('#cut_start').val(77);
+        $('#cut_end').val(115);
+
+        chrom = message_json["chrom"]
+        pas_pos = +message_json["pas_pos_coord"]
+        strand = message_json["strand"]
+
+        $('#chrom_inp').val(chrom.substring(3));
+        $('#start_inp').val(pas_pos - 500);
+        $('#end_inp').val(pas_pos + 500);
+        if(strand === '-') {
+          $('#rev_comp').attr('checked', true);
+        } else {
+          $('#rev_comp').attr('checked', false);
+        }
+
+        $('#chosen_gene').text(message_json["gene"] + " PAS " + message_json["sitenum"] + " (" + message_json["site_type"] + ") ");
+
+        //$('#chosen_site').text(message_json["gene"] + " PAS " + message_json["sitenum"] + " (" + message_json["site_type"] + ") ");
+        //$('#chosen_site_details').text("CSE Hexamer located at " + chrom + ":" + pas_pos + ":" + strand + ", Measured Isoform Abundance (" + database_name + ") = " + (Math.round(native_usage * 10000) / 10000));
+
+      }
+
+      function fetch_sequence(message_json) {
+
+        $('#predict_field').val(message_json["sequence"]);
+
+        $('#predict_button').click();
+      }
+
+      x = null;
+      orig_x = null;
+
+      trans_k = 1;
+
+      peaks = null;
+
+      function get_aparent(message_json) {
+
+        seq = $('#predict_field').val();
+
+        //d3.select("svg").remove();
+        d3.selectAll("svg > *").remove();
+
+        if(peaks != null) {
+          for(let i = 0; i < peaks.length; i++) {
+            d3.select("#peak_tr_" + peaks[i].pos).remove();
+          }
+        }
+
+        data = [];
+        for(let i = 0; i < message_json['polya_profile'].length; i++) {
+          data.push({ name: i, value: +message_json['polya_profile'][i], nt: seq[i] });
+        }
+
+        peaks = [];
+        for(let i = 0; i < message_json['peak_positions'].length; i++) {
+          peaks.push({ ix: i, pos: +message_json['peak_positions'][i], score: +message_json['peak_scores'][i] });
+        }
+
+
+        margin = ({top: 25, right: 0, bottom: 30, left: 40});
+
+        width = $('#cuts_svg').attr('width');
+        height = $('#cuts_svg').attr('height');
+
+
+        y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.value)]).nice()
+            .range([height - margin.bottom, margin.top]);
+
+        //x = d3.scaleBand()
+        //    .domain(data.map(d => d.name))
+        //    .range([margin.left, width - margin.right]);
+        //x = d3.scaleLinear()
+        //      .domain([0, data.length])//.nice()
+        //      .range([margin.left, width - margin.right]);
+
+        //if (x == null) {
+          x = d3.scaleLinear()
+              .domain([0, data.length])//.nice()
+              .range([margin.left, width - margin.right]);
+
+          orig_x = x;
+
+          x.bandwidthh = function() { return (width - margin.right - margin.left) / data.length; };
+
+        //}
+
+        //x.bandwidthh = function() { return (width - margin.right - margin.left) / data.length; };
+
+        yAxis = g => g
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y))
+            .call(g => g.select(".domain").remove())
+            .call(g => g.select(".tick:last-of-type text").clone()
+                .attr("x", 4)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text("pA Intensity"));
+
+
+        data_inrange = [];
+        seq_inrange = "";
+        for(let i = 0; i < message_json['polya_profile'].length; i++) {
+          if(i >= x.invert(0) - 20 && i < x.invert(width) + 20) {
+            data_inrange.push({ name: i, value: +message_json['polya_profile'][i], nt: seq[i] });
+            seq_inrange += seq[i];
+          }
+        }
+
+        xAxis_axis = d3.axisBottom(x).tickValues(data_inrange.map(d => d.name + 0.5)).tickFormat(function(d,i){ return seq_inrange[i] });
+        xAxisVar_axis = d3.axisTop(x);//d3.axisBottom(x);//.tickSize(0);
+
+        xAxis = g => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis_axis);
+
+        //xAxisVar = g => g
+        //    .attr("transform", `translate(0,${height - 0.725 * margin.bottom})`)
+        //    .call(xAxisVar_axis).call(g => g.select(".domain").remove());
+        xAxisVar = g => g
+            .attr("transform", `translate(0,${margin.top - 5})`)
+            .call(xAxisVar_axis).call(g => g.select(".domain").remove());
+
+
+
+        line = d3.line()
+          .defined(d => !isNaN(d.value) && x(d.name) >= margin.left)
+          .x(d => x(d.name))
+          .y(d => y(d.value));
+
+
+        d3.select('svg').append("path")
+          .attr("id", "cut_ref_line")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", "darkorange")
+          .attr("stroke-width", 3)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round")
+          .attr("d", line);
+
+
+
+
+        var gX = d3.select('svg')
+            .append("g")
+            .call(xAxis)
+
+
+        function peak_bar_click(d) {
+          if (peak_clicked_dict[d.pos] === false) {
+            peak_clicked_dict[d.pos] = true;
+          } else {
+            peak_clicked_dict[d.pos] = false;
+            peak_bar_mouseout(d);
+            return;
+          }
+
+          d3.select("#peak_bar_" + d.pos).raise().classed("active-bar", false);
+          d3.select("#peak_bar_" + d.pos).raise().classed("clicked-bar", true);
+
+          d3.select("#peak_tr_" + d.pos).remove();//.raise().classed("table-active", true);
+
+          var peak_table = document.getElementById("peak_table").getElementsByTagName('tbody')[0];
+          var row = peak_table.insertRow(d.ix);
+          row.setAttribute("scope", "row");
+          row.setAttribute("id", "peak_tr_" + d.pos);
+          row.setAttribute("class", "table-success");
+
+          var cell1 = row.insertCell(0);
+          var cell2 = row.insertCell(1);
+          var cell3 = row.insertCell(2);
+
+          cell1.innerHTML = "" + (d.ix + 1);
+          cell2.innerHTML = d.pos;
+          cell3.innerHTML = d.score;
+
+        }
+        
+        function peak_bar_mouseover(d) {
+          if (peak_clicked_dict[d.pos] === false) {
+            d3.select("#peak_bar_" + d.pos).raise().classed("active-bar", true);
+
+            d3.select("#peak_tr_" + d.pos).remove();//.raise().classed("table-active", true);
+
+            var peak_table = document.getElementById("peak_table").getElementsByTagName('tbody')[0];
+            var row = peak_table.insertRow(d.ix);
+            row.setAttribute("scope", "row");
+            row.setAttribute("id", "peak_tr_" + d.pos);
+            row.setAttribute("class", "table-active");
+
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+
+            cell1.innerHTML = "" + (d.ix + 1);
+            cell2.innerHTML = d.pos;
+            cell3.innerHTML = d.score;
+          }
+
+          return "PAS Score = " + d.score.toFixed(2);
+        }
+
+        function peak_bar_mouseout(d) {
+          if (peak_clicked_dict[d.pos] === false) {
+            d3.select("#peak_bar_" + d.pos).raise().classed("active-bar", false);
+            d3.select("#peak_bar_" + d.pos).raise().classed("clicked-bar", false);
+
+            d3.select("#peak_tr_" + d.pos).remove();//.raise().classed("table-active", false);
+
+            var peak_table = document.getElementById("peak_table").getElementsByTagName('tbody')[0];
+            var row = peak_table.insertRow(d.ix);
+            row.setAttribute("scope", "row");
+            row.setAttribute("id", "peak_tr_" + d.pos);
+
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+
+            cell1.innerHTML = "" + (d.ix + 1);
+            cell2.innerHTML = d.pos;
+            cell3.innerHTML = d.score;
+          }
+          tip.hide(d);
+        }
+
+        const tip = d3.tip().attr('class', 'd3-tip').html(d => peak_bar_mouseover(d));
+        d3.select('#cuts_svg').call(tip)
+
+        peak_clicked_dict = {}
+
+        for(let i = 0; i < peaks.length; i++) {
+
+          peak_clicked_dict[peaks[i].pos] = false;
+
+          d3.select('svg')
+              .append("line")
+              .attr("id", "peak_bar_" + peaks[i].pos)
+              .attr("x1", x(peaks[i].pos))
+              .attr("y1", y(0))
+              .attr("x2", x(peaks[i].pos))
+              .attr("y2", y(data[peaks[i].pos].value) + 3)
+              .attr("stroke-width", 3)
+              .attr("stroke", "darkblue")
+              .datum(peaks[i])
+              .on('mouseover', tip.show)
+              .on('mouseout' , peak_bar_mouseout)
+              .on('click' , peak_bar_click);
+
+          d3.select('svg')
+              .append("rect")
+              .attr("id", "peak_bbox_" + peaks[i].pos)
+              .attr("x"     , x(peaks[i].pos) - 30)
+              .attr("y"     , y(data[peaks[i].pos].value) + 3)
+              .attr("height", y(0) - (y(data[peaks[i].pos].value) + 3))
+              .attr("width" , 60)
+              .datum(peaks[i])
+              .style("fill", "none")
+              .style("pointer-events", "all")
+              .on('mouseover', tip.show)
+              .on('mouseout' , peak_bar_mouseout)
+              .on('click' , peak_bar_click);
+
+
+          var peak_table = document.getElementById("peak_table").getElementsByTagName('tbody')[0];
+          var row = peak_table.insertRow(i);
+          row.setAttribute("scope", "row");
+          row.setAttribute("id", "peak_tr_" + peaks[i].pos);
+
+          var cell1 = row.insertCell(0);
+          var cell2 = row.insertCell(1);
+          var cell3 = row.insertCell(2);
+
+          cell1.innerHTML = "" + (i + 1);
+          cell2.innerHTML = peaks[i].pos;
+          cell3.innerHTML = peaks[i].score;
+
+        }
+
+
+        d3.select('svg')
+            .append("rect")
+            .attr("id", "cuts_white_bg_left")
+            .attr("fill", "white")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", margin.left);
+
+        var gX_var = d3.select('svg')
+            .append("g")
+            .call(xAxisVar)
+
+        var gY = d3.select('svg')
+            .append("g")
+            .call(yAxis);
+
+        
+        if (x.bandwidthh() < 1) {
+          gX.call(xAxis_axis.tickValues(peaks.map(d => d.pos)).tickFormat(function(d,i){ return (peaks[i].ix + 1) }));
+          gX.style("font", "8px sans-serif");
+          gX.call(xAxis_axis.tickSize(6));
+        } else if (x.bandwidthh() >= 1 && x.bandwidthh() < 4) {
+          gX.call(xAxis_axis.tickValues(peaks.map(d => d.pos)).tickFormat(function(d,i){ return "Peak " + (peaks[i].ix + 1) }));
+          gX.style("font", "12px sans-serif");
+          gX.call(xAxis_axis.tickSize(6));
+        } else {
+          gX.call(xAxis_axis.tickValues(data_inrange.map(d => d.name + 0.5)).tickFormat(function(d,i){ return seq_inrange[i] }));
+
+          if (x.bandwidthh() >= 4 && x.bandwidthh() < 6) {
+            gX.style("font", "8px sans-serif");
+            gX.call(xAxis_axis.tickSize(3));
+          }  else if (x.bandwidthh() >= 6 && x.bandwidthh() < 9) {
+            gX.style("font", "10px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 9 && x.bandwidthh() < 11) {
+            gX.style("font", "12px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 11 && x.bandwidthh() < 13) {
+            gX.style("font", "14px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 13 && x.bandwidthh() < 15) {
+            gX.style("font", "16px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 15 && x.bandwidthh() < 17) {
+            gX.style("font", "18px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 17 && x.bandwidthh() < 20) {
+            gX.style("font", "20px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 20) {
+            gX.style("font", "24px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } 
+        }
+
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "A";})
+            .attr("color", "red").attr("font-weight", "bold");
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "C";})
+            .attr("color", "darkgreen").attr("font-weight", "bold");
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "G";})
+            .attr("color", "orange").attr("font-weight", "bold");
+        d3.select('svg')
+            .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "T";})
+            .attr("color", "darkblue").attr("font-weight", "bold");
+
+        d3.select('svg')
+            .selectAll(".tick text").attr("font-weight", "bold");
+
+
+
+        var zoom = d3.zoom()
+          .scaleExtent([1, 1000])
+          .translateExtent([[margin.left, 0], [width - margin.right, height]])
+          .extent([[margin.left, 0], [width - margin.right, height]])
+          .on("zoom", zoomed);
+
+        
+
+        function zoomed() {
+
+          data_inrange = [];
+          seq_inrange = "";
+          for(let i = 0; i < message_json['polya_profile'].length; i++) {
+            if(i >= x.invert(0) - 20 && i < x.invert(width) + 20) {
+              data_inrange.push({ name: i, value: +message_json['polya_profile'][i], nt: seq[i] });
+              seq_inrange += seq[i];
+            }
+          }
+          
+          x = d3.event.transform.rescaleX(orig_x);
+
+          trans_k = 1;
+          if (trans_k != null) {
+            trans_k = d3.event.transform.k;
+          }
+
+          x.bandwidthh = function() { return ((width - margin.right - margin.left) / data.length) * trans_k; };
+
+          gX_var.call(xAxisVar_axis.scale(x)).call(g => g.select(".domain").remove());
+          gX.call(xAxis_axis.scale(x));
+
+          if (x.bandwidthh() < 1) {
+            gX.call(xAxis_axis.tickValues(peaks.map(d => d.pos)).tickFormat(function(d,i){ return (peaks[i].ix + 1) }));
+            gX.style("font", "8px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else if (x.bandwidthh() >= 1 && x.bandwidthh() < 4) {
+            gX.call(xAxis_axis.tickValues(peaks.map(d => d.pos)).tickFormat(function(d,i){ return "Peak " + (peaks[i].ix + 1) }));
+            gX.style("font", "12px sans-serif");
+            gX.call(xAxis_axis.tickSize(6));
+          } else {
+            gX.call(xAxis_axis.tickValues(data_inrange.map(d => d.name + 0.5)).tickFormat(function(d,i){ return seq_inrange[i] }));
+
+            if (x.bandwidthh() >= 4 && x.bandwidthh() < 6) {
+              gX.style("font", "8px sans-serif");
+              gX.call(xAxis_axis.tickSize(3));
+            }  else if (x.bandwidthh() >= 6 && x.bandwidthh() < 9) {
+              gX.style("font", "10px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } else if (x.bandwidthh() >= 9 && x.bandwidthh() < 11) {
+              gX.style("font", "12px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } else if (x.bandwidthh() >= 11 && x.bandwidthh() < 13) {
+              gX.style("font", "14px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } else if (x.bandwidthh() >= 13 && x.bandwidthh() < 15) {
+              gX.style("font", "16px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } else if (x.bandwidthh() >= 15 && x.bandwidthh() < 17) {
+              gX.style("font", "18px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } else if (x.bandwidthh() >= 17 && x.bandwidthh() < 20) {
+              gX.style("font", "20px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } else if (x.bandwidthh() >= 20) {
+              gX.style("font", "24px sans-serif");
+              gX.call(xAxis_axis.tickSize(6));
+            } 
+          }
+
+          d3.select('svg')
+              .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "A";})
+              .attr("color", "red").attr("font-weight", "bold");
+          d3.select('svg')
+              .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "C";})
+              .attr("color", "darkgreen").attr("font-weight", "bold");
+          d3.select('svg')
+              .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "G";})
+              .attr("color", "orange").attr("font-weight", "bold");
+          d3.select('svg')
+              .selectAll(".tick text").filter(function(d, i) {return this.innerHTML === "T";})
+              .attr("color", "darkblue").attr("font-weight", "bold");
+
+          d3.select('svg')
+              .selectAll(".tick text").attr("font-weight", "bold");
+
+
+          var new_line = d3.line()
+            .defined(d => !isNaN(d.value) && x(d.name) >= margin.left)
+            .x(d => x(d.name))
+            .y(d => y(d.value));
+
+
+          d3.select('#cut_ref_line').attr("d", new_line);
+
+          for(let i = 0; i < peaks.length; i++) {
+            d3.select('#peak_bar_' + peaks[i].pos).attr("x1", x(peaks[i].pos)).attr("x2", x(peaks[i].pos));
+            d3.select('#peak_bbox_' + peaks[i].pos).attr("x", x(peaks[i].pos) - 30);
+          }
+
+        }
+
+        d3.select('svg').call(zoom);
+
+
+        function zoom_in() {
+          d3.select('svg').call(zoom.scaleBy, 2);
+        }
+
+        function zoom_out() {
+          d3.select('svg').call(zoom.scaleBy, 0.5);
+        }
+
+        function move_left() {
+          d3.select('svg').call(zoom.translateBy, 50);
+        }
+
+        function move_right() {
+          d3.select('svg').call(zoom.translateBy, -50);
+        }
+
+        d3.select('#zoomin_button').on('click', zoom_in);
+        d3.select('#zoomout_button').on('click', zoom_out);
+        d3.select('#moveleft_button').on('click', move_left);
+        d3.select('#moveright_button').on('click', move_right);
+
+
+        d3.select('svg').call(zoom.transform, d3.zoomIdentity);
+
+
+        $('#loading_text').html("PolyA Detector <span class='badge badge-success'>Loaded</span>");
+
+      }
+
+
+
+
+
+
+    //}
+
+
+    d3.select('#gene_symbol')
+            .on('change', function () {
+                gene = $('#gene_symbol').val();
+
+                $.ajax({
+                  url: "https://apa.cs.washington.edu/api/genes/" + gene + "?database=" + database_id,
+                  type: 'GET',
+                  dataType: 'json',
+                  success: get_sites
+                });
+
+                $('#apadb_list_button').text("pA Signals in " + gene)
+                $('#apadb_list_button').prop( "disabled", true );
+
+                $('#chosen_gene').text(gene);
+
+            });
+
+      d3.select('#predict_button')
+              .on('click', function () {
+
+                  seq = $('#predict_field').val();
+
+                  sequence_stride = $('#sequence_stride').val();
+                  min_peak_height = $('#min_peak_height').val();
+                  min_peak_distance = $('#min_peak_distance').val();
+                  min_peak_prominence = $('#min_peak_prominence').val();
+
+                  conv_smoothing = $('#conv_smoothing')[0].checked;
+                  if(conv_smoothing === true) {
+                    conv_smoothing = "true";
+                  } else {
+                    conv_smoothing = "false";
+                  }
+
+
+                  /*$.ajax({
+                    url: "https://apa.cs.washington.edu/api/detect?sequence=" + seq + "&smoothing=" + conv_smoothing + "&stride=" + sequence_stride + "&minheight=" + min_peak_height + "&mindistance=" + min_peak_distance + "&minprominence=" + min_peak_prominence,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: get_aparent
+                  });*/
+                  $.ajax({
+                    url: "https://apa.cs.washington.edu/api/detect?smoothing=" + conv_smoothing + "&stride=" + sequence_stride + "&minheight=" + min_peak_height + "&mindistance=" + min_peak_distance + "&minprominence=" + min_peak_prominence,
+                    type: 'POST',
+                    data : { 'sequence' : seq },
+                    success: get_aparent
+                  });
+
+
+                  $('#loading_text').html("PolyA Detector <span class='badge badge-warning'>Loading...</span>")
+
+              });
+
+      d3.select('#fetch_button')
+              .on('click', function () {
+
+                  var chrom = "chr" + $('#chrom_inp').val();
+                  var start = $('#start_inp').val();
+                  var end = $('#end_inp').val();
+                  
+                  var rev_comp = $('#rev_comp')[0].checked;
+                  if(rev_comp === true) {
+                    rev_comp = "true";
+                  } else {
+                    rev_comp = "false";
+                  }
+
+
+                  $.ajax({
+                    url: "https://apa.cs.washington.edu/api/genome?chrom=" + chrom + "&start=" + start + "&end=" + end + "&rc=" + rev_comp,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: fetch_sequence
+                  });
+
+              });
+
+
+      // Connection opened
+      //socket.addEventListener('open', function (event) {
+      //socket.send("getevents_PTEN");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes/PTEN" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_sites
+      });
+
+      //socket.send("getseq_PTEN.1");
+      /*$.ajax({
+        url: "https://apa.cs.washington.edu/api/sites/PTEN.1" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_site
+      });*/
+
+      //Populate gene symbol dropdown
+      //socket.send("getgenes");
+      $.ajax({
+        url: "https://apa.cs.washington.edu/api/genes" + "?database=" + database_id,
+        type: 'GET',
+        dataType: 'json',
+        success: get_genes
+      });
+
+      //$('#predict_button').click();
+      $('#fetch_button').click();
+
+
+
+/*
+    svgContainer.append("line")
+ 8                         .attr("x1", 5)
+ 9                         .attr("y1", 5)
+10                         .attr("x2", 50)
+11                         .attr("y2", 50)
+12                         .attr("stroke-width", 2)
+13                         .attr("stroke", "black");*/
+
+    </script>
+
+  </body>
+</html>

@@ -26,6 +26,7 @@
       <a class="p-2 text-dark" href="https://apa.cs.washington.edu/apa">APA Isoforms</a>
       <a class="p-2 text-dark" href="https://apa.cs.washington.edu/pas">PAS Score</a>
       <a class="p-2 text-dark" href="https://apa.cs.washington.edu/variant">Variants</a>
+      <a class="p-2 text-dark" href="https://apa.cs.washington.edu/detect">PolyA Detection</a>
     </nav>
     <a class="btn btn-outline-primary" href="https://github.com/johli/aparent">GitHub</a>
   </div>
@@ -45,7 +46,10 @@
           <p class="lead">APARENT is a deep neural network that can predict human 3' UTR Alternative Polyadenylation (APA) and the effects of genetic variants on APA. The network was trained on >3.5 million randomized 3' UTR poly-A signals expressed on mini gene reporters in HEK293.
           <br/>
           <br/>
-          APARENT was developed in <a href='https://www.seeliglab.org/'>Seelig Lab</a> at the University of Washington.
+          APARENT was described in <a href='https://doi.org/10.1016/j.cell.2019.04.046'>Bogard et al, Cell 2019 in press.</a><br/>
+          It was developed in <a href='https://www.seeliglab.org/'>Seelig Lab</a> at the University of Washington.<br/>
+          <br/>
+          Contact jlinder2 (at) cs.washington.edu for any questions about the model or data.
           </p>
         </div>
       </div>
@@ -101,7 +105,57 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <div class="container">
+    <div class="card-deck mb-3 text-center">
+      <div class="card border-primary mb-4 shadow-sm">
+        <div class="card-header">
+          <h4 class="my-0 font-weight-normal">Variants</h4>
+        </div>
+        <div class="card-body">
+          <img src="https://apa.cs.washington.edu/img/variant_logo.png" class="img-fluid" alt="Variants">
+          <ul class="list-unstyled mt-3 mb-4">
+            <li>1. Choose a PAS from the genome</li>
+            <li>2. Specify the variant sequence</li>
+            <li>3. Inspect Cleavage alteration</li>
+            <li>4. Inspect Isoform fold change</li>
+          </ul>
+          <a class="btn btn-lg btn-block btn-outline-primary" href="https://apa.cs.washington.edu/variant">Go</a>
+        </div>
+      </div>
+      <div class="card border-primary mb-4 shadow-sm">
+        <div class="card-header">
+          <h4 class="my-0 font-weight-normal">PolyA Detection</h4>
+        </div>
+        <div class="card-body">
+          <img src="https://apa.cs.washington.edu/img/detect_logo.png" class="img-fluid" alt="Detection">
+          <ul class="list-unstyled mt-3 mb-4">
+            <li>1. Choose pA sites from the genome</li>
+            <li>2. Or specify a custom sequence</li>
+            <li>3. Inspect PolyA profile</li>
+            <li>4. Zoom in and detect PASs</li>
+          </ul>
+          <a class="btn btn-lg btn-block btn-outline-primary" href="https://apa.cs.washington.edu/detect">Go</a>
+        </div>
+      </div>
+      <div class="card border-light mb-4 shadow-sm">
+        <div class="card-header">
+          <h4 class="my-0 font-weight-normal">GitHub</h4>
+        </div>
+        <div class="card-body">
+          <img src="https://apa.cs.washington.edu/img/gitgo_logo.png" class="img-fluid" alt="GitHub">
+          <ul class="list-unstyled mt-3 mb-4">
+            <li>- Run APARENT in batch mode</li>
+            <li>- Optimize sequences with SeqProp</li>
+            <li>- Visualize network features</li>
+            <li>- Integrate APARENT in your system</li>
+          </ul>
+          <a class="btn btn-lg btn-block btn-outline-success" href="https://github.com/johli/aparent">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <footer class="my-5 pt-5 text-muted text-center text-small">
     <p class="mb-1">Seelig Lab</p>
