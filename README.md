@@ -100,8 +100,8 @@ The newest version of the data has been re-processed with the following addition
 1. Exact cleavage positions have been mapped for the Alien1 Random MPRA Sublibrary.
 2. A 20 nt random barcode upstream of the USE in the Alien1 Sublibrary has been included in the sequence.
 
-[Processed Data Repository](https://drive.google.com/open?id=1qex3oY-rarsd7YowM7TxxUklLbLkUyOT)<br/>
-[Processed Data Repository (legacy)](https://drive.google.com/open?id=1Q2tTIRIR0C3kL7stI51TPLdGMdbZ0WnV)<br/>
+[Processed Data Repository](https://drive.google.com/drive/folders/10FS2AQh3RzLccdH9uWX1CwuDHrRRLqli?usp=sharing)<br/>
+[Processed Data Repository (legacy)](https://drive.google.com/drive/folders/1o4Q81I1H2F7iSqEy0NEZ4ssAdkASShF_?usp=sharing)<br/>
 
 *Note*: The "Processed Data Repository" also includes the Legacy data, but the data has been re-formatted such that it is easier to work with in Keras.
 
